@@ -87,7 +87,7 @@ def write_test_genome_bedfile(queryobj, args, outputfiles, bedobjects):
 
     # write bed file if it doesn't exist yet
     if not os.path.exists(outputfiles["testgenomebed"]):
-        bedobjects["testgenomeregions"].saveas(outputfiles["testgenomebed"])
+        bedobjects["testgenomeregions"].sort().saveas(outputfiles["testgenomebed"])
 
     return 0
 
@@ -175,9 +175,9 @@ def find_all_ns(queryobj, args, outputfiles, bedobjects)->list:
         bedobjects["testnregions"] = pybedtools.BedTool(gapbedstring, from_string = True)
 
     if outputfiles["testnonnbed"] and not os.path.exists(outputfiles["testnonnbed"]):
-        bedobjects["testnonnregions"].saveas(outputfiles["testnonnbed"])
+        bedobjects["testnonnregions"].sort().saveas(outputfiles["testnonnbed"])
     if outputfiles["testnbed"] and not os.path.exists(outputfiles["testnbed"]):
-        bedobjects["testnregions"].saveas(outputfiles["testnbed"])
+        bedobjects["testnregions"].sort().saveas(outputfiles["testnbed"])
 
     return 0
 
