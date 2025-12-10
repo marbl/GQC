@@ -52,39 +52,41 @@ def map_kmer_markers_onto_fasta(fastafile:str, markerfilelist:list, outputdir:st
     logger.info("Creating temporary directory " + tmpdir + " for output")
     path.mkdir(exist_ok=True)
 
-    mergefilestring = ""
-    for markerfile in markerfilelist:
-        pattern = r"\.fastq$|\.fasta$|\.fq$|\.fa$|\.fastq.gz$|\.fasta.gz$|\.fq.gz$|\.fa.gz$"
-        assemblyroot = re.sub(pattern, "", fastafile)
-
-        # KmerMap constructs the output file name from the third argument with ".assemblyroot" + ".kmers.merge.bed"
-        kmermapinputprefix = markerfile
-        kmermapoutputprefix = markerfile + "." + assemblyroot
-        mergefilestring = mergefilestring + " " + kmermapoutputprefix + ".kmers.merge.bed"
-        markercommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + markerfile + " " + fastafile + " " + kmermapinputprefix
-        
-        if not os.path.exists(kmermapoutputprefix + ".kmers.merge.bed"):
-            logger.info("Running: " + markercommand)
-            proc = subprocess.Popen(markercommand, shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            proc.wait()
-
-            if proc.returncode == 0:
-                logger.info(markercommand + " completed successfully")
-            else:
-                logger.info(stderr.decode())
-        else:
-            logger.info("Skipping run of " + markercommand + ": output already exists")
-    
+    pattern = r"\.fastq$|\.fasta$|\.fq$|\.fa$|\.fastq.gz$|\.fasta.gz$|\.fq.gz$|\.fa.gz$"
+    assemblyroot = re.sub(pattern, "", fastafile)
     outputfile = outputdir + "/" + assemblyroot + ".kmers.merge.bed"
 
     if not os.path.exists(outputfile):
+        mergefilestring = ""
+        for markerfile in markerfilelist:
+            # KmerMap constructs the output file name from the third argument with ".assemblyroot" + ".kmers.merge.bed"
+            kmermapinputprefix = markerfile
+            kmermapoutputprefix = markerfile + "." + assemblyroot
+            mergefilestring = mergefilestring + " " + kmermapoutputprefix + ".kmers.merge.bed"
+            markercommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + markerfile + " " + fastafile + " " + kmermapinputprefix
+            
+            if not os.path.exists(kmermapoutputprefix + ".kmers.merge.bed"):
+                logger.info("Running: " + markercommand)
+                proc = subprocess.Popen(markercommand, shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = proc.communicate()
+                proc.wait()
+    
+                if proc.returncode == 0:
+                    logger.info(markercommand + " completed successfully")
+                else:
+                    logger.info(stderr.decode())
+            else:
+                logger.info("Skipping run of " + markercommand + ": output already exists")
+    
         logger.debug("Merging output files into " + outputfile)
         mergesortcommand = "cat" + mergefilestring + " | sort -k1,1n -k2,2n -k3,3n " + " > " + outputfile
         logger.debug(mergesortcommand)
         os.system(mergesortcommand)
+        cleanupcommand = "rm" + mergefilestring
+        logger.debug(cleanupcommand)
+        os.system(cleanupcommand)
     else:
-        logger.debug("Skipping merging of kmer files into " + outputfile + ": output already exists")
+        logger.debug("Skipping kmer mapping and merging of kmer files into " + outputfile + ": output already exists")
    
     return outputfile
 
