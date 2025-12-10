@@ -25,10 +25,10 @@ readaligns <- function(chromfile) {
 
   aligns$start <- as.numeric(aligns$start)/axisunitbases
   aligns$end <- as.numeric(aligns$end)/axisunitbases
-  aligns$query <- sapply(seq(1, length(aligns$alignname)), function(i) {strsplit(aligns$alignname, split="_")[[i]][1]})
-  aligns$querystart <- sapply(seq(1, length(aligns$alignname)), function(i) {as.numeric(strsplit(aligns$alignname, split="_")[[i]][2])/axisunitbases})
-  aligns$queryend <- sapply(seq(1, length(aligns$alignname)), function(i) {as.numeric(strsplit(aligns$alignname, split="_")[[i]][3])/axisunitbases})
-  aligns$cluster <- sapply(seq(1, length(aligns$alignname)), function(i) {strsplit(aligns$alignname, split="_")[[i]][4]})
+  aligns$query <- sapply(seq(1, length(aligns$alignname)), function(i) {us_fields <- strsplit(aligns$alignname, split="_"); return(paste(us_fields[[i]][1:(length(us_fields[[i]])-3)], sep="_", collapse="_"))})
+  aligns$querystart <- sapply(seq(1, length(aligns$alignname)), function(i) {us_fields <- strsplit(aligns$alignname, split="_"); return(as.numeric(us_fields[[i]][length(us_fields[[i]]) - 2])/axisunitbases)})
+  aligns$queryend <- sapply(seq(1, length(aligns$alignname)), function(i) {us_fields <- strsplit(aligns$alignname, split="_"); return(as.numeric(us_fields[[i]][length(us_fields[[i]]) - 1])/axisunitbases)})
+  aligns$cluster <- sapply(seq(1, length(aligns$alignname)), function(i) {us_fields <- strsplit(aligns$alignname, split="_"); return(us_fields[[i]][length(us_fields[[i]])])})
 
   chromorderedaligns <- aligns[order(aligns$start, aligns$end), ]
   
