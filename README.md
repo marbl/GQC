@@ -44,7 +44,7 @@ pytest
 
 In order to evaluate heterozygous sites, short tandem repeat run lengths, and other features of the genome benchmark, the GQC program needs specially formatted annotation files for the benchmark genomes. For hg002v1.1, these files are contained in a tarball available on [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/polishing/HG002/v1.1/benchmark/resources/hg002v1.1.resources.tar.gz). The program reads the locations of these files from a config file, which GQC assumes, by default, is a file called "benchconfig.txt" in your working directory, but the location of this file can also be specified with the -c or --config option. If the config file is not accessible in one of these two ways, the program will complain and exit.
 
-An example config file is located in the resource tarball and contains the necessary parameters and file names. Edit that config file to specify the full path for each of the resource files (the "resourcedir" should be the path to the entire directory), and you can use that file as your config file when running the GQC or readbench commands.
+An example config file is located [here](https://github.com/marbl/GQC/blob/main/GQC/benchconfig.txt) and contains the necessary parameters and file names. Edit that config file to specify the full path for each of the resource files (the "resourcedir" should be the path to the entire directory), and you can use that file as your config file when running the GQC or readbench commands.
 
 ## Evaluating haploid and diploid assemblies
 
