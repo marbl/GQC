@@ -933,3 +933,95 @@ def assess_read_align_errors(align_obj, refobj, readerrorfile:str, bedintervals,
                 errorline = efh.readline()
 
     return stats
+
+def write_combined_ref_error_files(outputdir:str, comparisondata:dict, comparisonoutputfiles:dict, refbedobj, args):
+
+    logger.info("Writing error bed files")
+    combinedreferrorfile = outputdir + "/" + args.qname + "_vs_" + args.rname + ".refdiscrepancies.sort.bed"
+    nolongstrcombreferrorfile = outputdir + "/" + args.qname + "_vs_" + args.rname + ".refdiscrepancies.nolongstrs.sort.bed"
+    nostrsubq30combreferrorfile = outputdir + "/" + args.qname + "_vs_" + args.rname + ".refdiscrepancies.nolongstrs.subq30.sort.bed"
+    nostrsubq40combreferrorfile = outputdir + "/" + args.qname + "_vs_" + args.rname + ".refdiscrepancies.nolongstrs.subq40.sort.bed"
+    nostrsubq50combreferrorfile = outputdir + "/" + args.qname + "_vs_" + args.rname + ".refdiscrepancies.nolongstrs.subq50.sort.bed"
+
+    # write discrepancies in alignments for entire ref genome to file (if necessary)
+    if not os.path.exists(combinedreferrorfile):
+        combinedreferrorbedstring = ""
+        for comparison in comparisondata.keys():
+            with open(comparisonoutputfiles[comparison]['referrorbed']) as referrorfh:
+                logger.info("Including ref discrepancy file" + comparisonoutputfiles[comparison]['referrorbed'])
+                combinedreferrorbedstring = combinedreferrorbedstring + referrorfh.read()
+        combinedreferrorobj = pybedtools.BedTool(combinedreferrorbedstring, from_string=True)
+        logger.info("Saving to " + combinedreferrorfile)
+        combinedreferrorobj.sort().saveas(combinedreferrorfile)
+    else:
+        combinedreferrorobj = pybedtools.BedTool(combinedreferrorfile)
+
+    # write non-long STR discrepancies in alignments for entire ref genome to file (if necessary)
+    if not os.path.exists(nolongstrcombreferrorfile):
+        nolongstrints = []
+        for errorint in combinedreferrorobj:
+            errorname = errorint.name
+            erroralleles = errorname.split("_")
+            [ref, alt] = erroralleles[-2:]
+            if len(ref) < 10 or len(alt) < 10 or abs(len(ref) - len(alt)) > 4:
+                nolongstrints.append(errorint)
+        nolongstrcombreferrorobj = pybedtools.BedTool(nolongstrints)
+        nolongstrcombreferrorobj.saveas(nolongstrcombreferrorfile)
+    else:
+        nolongstrcombreferrorobj = pybedtools.BedTool(nolongstrcombreferrorfile)
+
+    # write windowed bedfiles with windows having higher levels of non-long STR discrepancies between assemblies:
+    # these files will be subtracted from the genome, along with N regions and regions uncovered by alignments, to obtain 
+    # regions in the reference covered by high-accuracy aligned query:
+    if not os.path.exists(nostrsubq50combreferrorfile):
+    
+        # find regions with higher levels of non-long STR discrepancies between the assemblies:
+        logger.info("Using bin size 100000")
+        binsize = 100000
+
+        # can optionally pass a filename to binintervals as last argument to write file
+        binnedcoveredintervals = bedtoolslib.binintervals(refbedobj, binsize)
+         
+        
+        #[errorbins, errorbincounts, errorbinindex] = coverage.initiate_bins(refbedobj, binsize, args, includepartial=True)
+
+        #for error in nolongstrcombreferrorobj:
+            #chrom = error.chrom
+            #start = error.start
+            #binstart = binsize*int(start/binsize)
+            #binkey = chrom + ":" + str(binstart)
+            #if binkey in errorbinindex.keys():
+                #errorbincounts[errorbinindex[binkey]] = errorbincounts[errorbinindex[binkey]] + 1
+            #else:
+                #logger.debug("No bin key for position " + chrom + ":" + str(start))
+#
+        #errorcount30string = ""
+        #errorcount40string = ""
+        #errorcount50string = ""
+        #for errorbin in errorbins:
+            #chrom = errorbin.chrom
+            #start = errorbin.start
+            #end = errorbin.end
+            #binkey = chrom + ":" + str(start)
+            #binnumber = errorbinindex[binkey]
+            #errorcount = errorbincounts[binnumber]
+#
+            #if errorcount/(end - start) >= 0.001:
+                #errorcount30string = errorcount30string + "\n" + chrom + "\t" + str(start) + "\t" + str(end) + "\t" + str(errorcount)
+            #if errorcount/(end - start) >= 0.0001:
+                #errorcount40string = errorcount40string + "\n" + chrom + "\t" + str(start) + "\t" + str(end) + "\t" + str(errorcount)
+            #if errorcount/(end - start) >= 0.00001:
+                #errorcount50string = errorcount50string + "\n" + chrom + "\t" + str(start) + "\t" + str(end) + "\t" + str(errorcount)
+#
+        #errorcount30obj = pybedtools.BedTool(errorcount30string, from_string = True)
+        #errorcount30obj.saveas(nostrsubq30combreferrorfile)
+        #errorcount40obj = pybedtools.BedTool(errorcount40string, from_string = True)
+        #errorcount40obj.saveas(nostrsubq40combreferrorfile)
+        #errorcount50obj = pybedtools.BedTool(errorcount50string, from_string = True)
+        #errorcount50obj.saveas(nostrsubq50combreferrorfile)
+#
+        #bedtools subtract -a $REFGENOMEBED -b $NLOCBED | bedtools subtract -a - -b $NOSTRSUBQ30BED | bedtools subtract -a - -b $UNCOVBED > $CLEANQ30BED
+        #bedtools subtract -a $REFGENOMEBED -b $NLOCBED | bedtools subtract -a - -b $NOSTRSUBQ40BED | bedtools subtract -a - -b $UNCOVBED > $CLEANQ40BED
+        #bedtools subtract -a $REFGENOMEBED -b $NLOCBED | bedtools subtract -a - -b $NOSTRSUBQ50BED | bedtools subtract -a - -b $UNCOVBED > $CLEANQ50BED
+
+    return 0

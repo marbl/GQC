@@ -47,7 +47,6 @@ def mergemultiplebedfiles(bedfilelist:list, sort=True, postmerge=False):
         exit(1)
 
     firstbedtool = pybedtools.bedtool.BedTool(bedfilelist[0])
-    #allbedtools = firstbedtool.cat(bedfilelist[1:], postmerge=postmerge)
     allbedtools = firstbedtool.cat(bedfilelist[1])
 
     if sort:
@@ -108,3 +107,22 @@ def genomeintervals(fastafile:str):
     
     return pybedtools.BedTool(bedstring, from_string=True)
 
+def binintervals(intervals, binsize=10000, outbedfile=None):
+    binbedtring = ""
+    for interval in intervals:
+        chrom = interval.chrom
+        start = interval.start
+        end = interval.end
+
+        binstart = start
+        binend = start + binsize
+        while binend <= end:
+            binbedstring = binbedstring + chrom + "\t" + str(binstart) + "\t" + str(binend) + "\n"
+            binstart = binend
+            binend = binend + binsize
+
+    binnedbedobj = pybedtools.BedTool(binbedstring, from_string = True)
+    if outbedfile is not None:
+        binnedbedobj.sort().saveas(outbedfile)
+
+    return binnedbedobj

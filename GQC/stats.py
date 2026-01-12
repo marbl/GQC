@@ -950,3 +950,7 @@ def write_assembly_haplotype_stats(fastaobj, contigregions, gapregions, args)->d
 
     return hapstats
 
+def write_assembly_comparison_stats(args):
+
+    return 0
+

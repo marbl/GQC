@@ -189,12 +189,10 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
 
     refseq = refobj.fetch(reference=ref, start=refstart-1, end=refend).upper()
 
-    strandsign = 1
     bedstrand = '+'
     if strand == 'R':
         if queryobj is not None:
             queryseq = seqparse.revcomp(queryseq)
-        strandsign = -1
         bedstrand = '-'
 
     alignops = align.cigartuples
