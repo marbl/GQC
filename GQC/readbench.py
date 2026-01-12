@@ -38,7 +38,6 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-r', '--reffasta', type=str, required=True, help='(indexed) fasta file for benchmark reference')
     parser.add_argument('--regions', '--regionbed', type=str, required=False, default='', help='bed file of benchmark regions to assess (default is to assess the whole diploid benchmark genome)')
     parser.add_argument('-p', '--prefix', type=str, required=True, help='prefix for output directory name')
-    parser.add_argument('-m', '--minalignlength', type=int, required=False, default=5000, help='minimum length of alignment required to be included in alignment statistics and error counts')
     parser.add_argument('--mincontiglength', type=int, required=False, default=500, help='minimum length for contig to be included in contig statistics')
     parser.add_argument('--maxstrreads', type=int, required=False, default=500, help='maximum number of reads to be evaluated for any one STR run in the STR run accuracy analysis. Use 0 to analyze all reads')
     parser.add_argument('--excludefile', type=str, required=False, default=None, help='bed file of benchmark locations to exclude from consideration (in addition to stretches of 10 or more Ns and regions in the exclude file specified in the config file)')
