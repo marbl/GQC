@@ -1,4 +1,4 @@
-resourcedir: /path/to/resourcedir/v1.1
+resourcedir: /data/Phillippy/projects/HG002_diploid/benchmarking/resources/v1.1
 mononucruns: v1.1.mnr10.bed
 dinucruns: v1.1.dnr.bed
 trinucruns: v1.1.tnr.bed
