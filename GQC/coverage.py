@@ -103,35 +103,50 @@ def initiate_included_bins(refobj, includedbins, binsize, args)->list:
 
     return [binintervals, bincounts, bindict]
 
-def initiate_bins(refobj, binsize, args)->list:
+# Bin the genome into binsize-sized intervals (doesn't include mitochondria or ends of chromosomes with fewer than binsize bases)
+def initiate_bins(refregionsbed:pybedtools.BedTool, binsize:int, args, includepartial=False)->list:
 
     bindict = {}
     binnumber = 0
 
     logger.debug("Initiating bins")
     totallength = 0
-    for ref in refobj.references:
-        if ref == "chrM":
+    refentries = []
+    reflengths = {}
+    for region in refregionsbed:
+        chrom = region.chrom
+        start = region.start
+        end = region.end
+        if chrom == "chrM":
             continue
-        reflength = refobj.get_reference_length(ref)
-        totallength += reflength
+        if chrom not in refentries:
+            refentries.append(chrom)
+            reflengths[chrom] = end
+            totallength += end
+        else:
+            if end > reflengths[chrom]:
+                totallength += end - reflengths[chrom]
+                reflengths[chrom] = end
 
     numbins = int(totallength/binsize)
     bincounts = array.array('i', (0,)) * numbins
     logger.debug("Zeroed " + str(numbins) + " bins")
     binintervals = []
 
-    for ref in refobj.references:
+    for ref in refentries:
         logger.debug("Binning " + ref)
         if ref == "chrM":
             continue
-        reflength = refobj.get_reference_length(ref)
+        reflength = reflengths[ref]
         binstart = 0
         while binstart + binsize <= reflength:
             binintervals.append(ref + "\t" + str(binstart) + "\t" + str(binstart + binsize) + "\n")
             bindict[ref + ":" + str(binstart)] = binnumber
             binnumber += 1
             binstart += binsize
+        if includepartial and binstart < reflength:
+            binintervals.append(ref + "\t" + str(binstart) + "\t" + str(reflength) + "\n")
+            bindict[ref + ":" + str(binstart)] = binnumber
 
     logger.debug("Populated index with " + str(binnumber) + " bin names")
 
@@ -294,8 +309,15 @@ def tally_included_bin_arrival_rates(alignobj:pysam.AlignmentFile, refobj:pysam.
     else:
         binsize = args.covbinsize
 
+    # create a BedTools object for the entire reference:
+    refbedstring = ""
+    for ref in refobj.references:
+        reflength = refobj.get_reference_length(ref)
+        refbedstring = refbedstring + ref + "\t0\t" + str(reflength) + "\n"
+    refbedobj = pybedtools.BedTool(refbedstring, from_string=True)
+
     logger.info("Using bin size " + str(binsize))
-    [coveragebins, coveragebincounts, coveragebinindex] = initiate_bins(alignobj, binsize, args)
+    [coveragebins, coveragebincounts, coveragebinindex] = initiate_bins(refbedobj, binsize, args)
 
     # this should truncate intervals that aren't fully included in the includedintervals:
     ibin = 0
@@ -324,7 +346,6 @@ def tally_included_bin_arrival_rates(alignobj:pysam.AlignmentFile, refobj:pysam.
                     bincount = alignobj.count(contig=binchrom, start=binstart, stop=binend)
                 else:
                     bincount = alignobj.count(contig=binchrom, start=binstart, stop=binend, read_callback=startsinbin)
-                coveragebincounts[ibin] = bincount
                 # calculate things about this bin:
                 [count_at, count_ag, count_ac, count_gc, count_gcnucs, count_atnucs] =  bin_gccontent_extreme_kmers(refobj, binchrom, binstart, binend, kmersize)
                 logger.debug(binchrom + "\t" + str(binstart) + "\t" + str(binend) + "\t" + str(bincount))
