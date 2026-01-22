@@ -10,11 +10,6 @@ from GQC import alignparse
 from GQC import mummermethods
 from GQC import bedtoolslib
 
-#def test_configs():
-    #args = bench.parse_arguments(['-c', 'GQC/benchconfig.txt', '-b', 'blah', '-r', 'blah', '-q', 'blah', '-p', 'blah'])
-    #configvals = bench.read_config_data(args)
-    #assert configvals['resourcedir'] == 'resources'
-
 def test_checkforprogs():
     bench.check_for_bedtools()
     no_rscript = bench.check_for_R()

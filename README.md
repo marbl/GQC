@@ -13,9 +13,9 @@ The program was written by Nancy Fisher Hansen, a staff scientist in the [Genome
 
 ## Dependencies
 
-Running GQC's assembly benchmarking requires an installation of commit 38b07c2 or later of Gene Myers' [FASTK](https://github.com/thegenemyers/FASTK.git) package with its "KmerMap" and "FastK" commands in your path. For both assembly and read analyses, GQC uses R's Rscript command with [Bioconductor](https://www.bioconductor.org/) to create plots, and [bedtools](https://bedtools.readthedocs.io/en/latest/) to compare and merge intervals. If the "Rscript" command is not in a user's path, the program will complain, and perform all functions except plotting. If the "bedtools" command isn't in the user's path, the program will exit with an error. To use GQC's plotting functions, you will need to install the "stringr" package and the "karyoploteR" package, which are part of Bioconductor.
+Running GQC's assembly benchmarking requires an installation of commit 38b07c2 or later of Gene Myers' [FASTK](https://github.com/thegenemyers/FASTK.git) package with its "KmerMap" and "FastK" commands in your path. When evaluating assemblies, GQC calls the [minimap2](https://github.com/lh3/minimap2) aligner, which should also be installed and in your path. For both assembly and read analyses, GQC uses R's Rscript command with [Bioconductor](https://www.bioconductor.org/) to create plots, and [bedtools](https://bedtools.readthedocs.io/en/latest/) to compare and merge intervals. If the "Rscript" command is not in a user's path, the program will complain, and perform all functions except plotting. If the "bedtools" command isn't in the user's path, the program will exit with an error. To use GQC's plotting functions, you will need to install the "stringr" package and the "karyoploteR" package, which are part of Bioconductor.
 
-In addition, the program requires a set of files with data about the benchmark assembly you are comparing to. For the Q100 benchmark assembly hg002v1.1, a tarball of these files is available on [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/polishing/HG002/v1.1/benchmark/resources/hg002v1.1.resources.tar.gz). Once downloaded, this tarball should be unpacked and the locations of its files should be included in the config file that is either in your current working directory or that you pass to the GQC program (see the section "Config file" for more details).
+In addition, the program requires a set of files with data about the benchmark assembly you are comparing to. For the Q100 benchmark assembly hg002v1.1, a tarball of these files is available on [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/polishing/HG002/v1.1/benchmark/resources/hg002v1.1.resources.tar.gz). Once downloaded, this tarball should be unpacked and the first line in the file GQC/benchconfig.txt should be edited to specify the path of the downloaded resources directory (see the section "Config file" for more details).
 
 All other dependencies will be installed by the pip installer with the commands in the next section called "Local Installation". Feel free to post installation issues to the issues section of this github repository and we will attempt to address them promptly.
 
@@ -23,7 +23,7 @@ All other dependencies will be installed by the pip installer with the commands 
 
 Until GQC becomes available on PyPi and bioconda, the easiest way to use it is to install it locally. First clone this github repository:
 ```
-git clone https://github.com/nhansen/GQC
+git clone https://github.com/marbl/GQC
 cd GQC
 ```
 
@@ -44,7 +44,7 @@ pytest
 
 In order to evaluate heterozygous sites, short tandem repeat run lengths, and other features of the genome benchmark, the GQC program needs specially formatted annotation files for the benchmark genomes. For hg002v1.1, these files are contained in a tarball available on [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/polishing/HG002/v1.1/benchmark/resources/hg002v1.1.resources.tar.gz). The program reads the locations of these files from a config file, which GQC assumes, by default, is a file called "benchconfig.txt" in your working directory, but the location of this file can also be specified with the -c or --config option. If the config file is not accessible in one of these two ways, the program will complain and exit.
 
-An example config file is located [here](https://github.com/marbl/GQC/blob/main/GQC/benchconfig.txt) and contains the necessary parameters and file names. Edit that config file to specify the full path for each of the resource files (the "resourcedir" should be the path to the entire directory), and you can use that file as your config file when running the GQC or readbench commands.
+An example config file is located [here](https://github.com/marbl/GQC/blob/main/GQC/benchconfig.txt) and contains the necessary parameters and file names. Edit that config file to specify the full path of the downloaded resources directory, and you can use that file as your config file when running the GQC or readbench commands.
 
 ## Evaluating haploid and diploid assemblies
 
