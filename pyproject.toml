@@ -36,6 +36,7 @@ gethets = "GQC.gethets:main"
 readbench = "GQC.readbench:main"
 assemblycompare = "GQC.compare:main"
 bamdiscrepancies = "GQC.bamdiscrepancies:main"
+multiplot = "GQC.multiplot:main"
 
 [project.urls]
 "Homepage" = "https://github.com/nhansen/GQC"

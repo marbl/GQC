@@ -1,4 +1,4 @@
-resourcedir: /path/to/your/resourcedir/resources
+resourcedir: /Users/nhansen/GQC/github/resources
 mononucruns: v1.1.mnr10.bed
 dinucruns: v1.1.dnr.bed
 trinucruns: v1.1.tnr.bed

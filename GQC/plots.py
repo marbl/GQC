@@ -152,3 +152,21 @@ def plot_assembly_summary_stats(assemblyname:str, benchname:str, outputdir:str, 
         returnvalue = os.system(plotcommand)
     return returnvalue
 
+def plot_assembly_comparison_plots(assemblies:list, benchname:str, nonnbenchbed:str, outputdir:str):
+    rfile_res = importlib.resources.files("GQC").joinpath('AssemblyMultiplot.R')
+    rlib_res = importlib.resources.files("GQC").joinpath('AssemblyComparisonPlotFunctions.R')
+    assemblyfile = outputdir + "/assemblyparams.txt"
+
+    with open(assemblyfile, "w") as afh:
+        for assembly in assemblies:
+            afh.write(assembly['directory'] + "\t" + assembly['prefix'] + "\t" + assembly['label'] + "\t" + assembly['shortlabel'])
+            if 'color' in assembly.keys():
+                afh.write("\t" + assembly['color'])
+            afh.write("\n")
+
+    with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
+        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyfile + " " + benchname + " " + outputdir + " " + nonnbenchbed
+        logger.info(plotcommand)
+        returnvalue = os.system(plotcommand)
+    return returnvalue
+
