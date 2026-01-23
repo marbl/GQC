@@ -50,7 +50,7 @@ An example config file is located [here](https://github.com/marbl/GQC/blob/main/
 
 To evaluate assembly scaffolds or contigs, the "bench" command first maps the locations of haplotype-specific 40-mers from the benchmark with the assembly's FASTA file. It then uses your installed version of minimap2 to create and trim alignments of each phased assembly sequence block to the appropriate benchmark haplotype.
 
-	bench -r <benchmark.fasta> -q <assembly.fasta> -p <prefix_for_output> -A <assembly_name> -B <benchmark_name>
+	assemblybench -r <benchmark.fasta> -q <assembly.fasta> -p <prefix_for_output> -A <assembly_name> -B <benchmark_name>
 
 For typical assemblies, the bench command will use about 64Gb of memory and around 4 hours run time on two processors. The command "GQC --help" will display information on other options available (e.g., to restrict regions of the genome examined, set minimum contig or alignment lengths for processing, etc.).
 
@@ -67,6 +67,21 @@ Because it is evaluating more alignments than for an assembly evaluation, the re
 To compare two FASTA files for two different assemblies (a "query" assembly and a "reference" assembly) of the same genome (which need not be a benchmark genome), the program "assemblycompare" first phases the query assembly against the reference assembly using 40 basepair k-mers that are unique to one haplotype of the reference assembly. It then reports statistics for completeness of and discrepancies within alignments between query scaffolds and the appropriate haplotype of the reference assembly. The usage for "assemblycompare" is
 
 	assemblycompare --q1fasta <queryhap1.fasta> --q2fasta <queryhap2.fasta> --r1fasta <refhap1.fasta> --r2fasta <refhap2.fasta> -p <prefix_for_output> -Q <query_assembly_name> -R <ref_assembly_name>
+
+## Plotting GQC results for multiple assemblies together in single plots
+
+It is possible to combine plots from multiple GQC assembly benchmarking runs into single plots using GQC's "multiplot" command. To produce plots containing the results from multiple GQC assembly benchmarking runs, create a tab-delimited input file with one line for each assembly GQC run. Each line's first four tab-delimited fields must be:
+
+1. The path to the directory containing the assembly's "generalstats.txt" and other GQC output files. That directory should also contain the "alignclusterlengths.txt", the "singlenucerrorstats.txt", the "indelerrorstats.txt", and the "mononucstats.txt" files for that run.
+2. The assembly name passed to GQC for the run (this is the string preceding ".generalstats.txt" in the general stats file name).
+3. A label to be used for the assembly in legends and axis labels.
+4. A shorter version of the label in the third column, for places where space is scarce. 
+
+Optionally, you can add a fifth column to the assembly file containing a hex-formatted color (e.g., #6699CC) to be used in plots for that assembly. If you include a fifth column for one assembly, you must include five columns for all of them. If your file has only four columns, GQC's default colors will be used. The usage for "multiplot" is
+
+	multiplot --inputfile <assembly file> --output <directory name for output plots> --config <GQC config file>
+
+The config file option is not required if you have a GQC config file in your current working directory named "benchconfig.txt". The inputfile and output options are required, and the output directory will be created if it doesn't already exist.
 
 # Program Outputs
 
