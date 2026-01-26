@@ -1,5 +1,5 @@
 GQC -- Genome Quality Checker
-==========
+=============================
 
 .. toctree::
    :hidden:
@@ -35,22 +35,22 @@ Until GQC becomes available on PyPi and bioconda, the easiest way to use it is t
 
 ::
 
-git clone https://github.com/marbl/GQC
-cd GQC
+  git clone https://github.com/marbl/GQC
+  cd GQC
 
 Create a virtual environment for the project:
 
 ::
 
-python3 -m venv venv
-source venv/bin/activate
+  python3 -m venv venv
+  source venv/bin/activate
 
 Finally use python's pip installer to install and test a development copy for yourself to run:
 
 ::
 
-python3 -m pip install -e .
-pytest
+  python3 -m pip install -e .
+  pytest
 
 Publications
 ============

@@ -104,7 +104,7 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -180,6 +180,17 @@ html_static_path = ['_static']
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = None
+
+#  Build using the RTD theme, if not on RTD.
+#    https://read-the-docs.readthedocs.org/en/latest/theme.html
+#    https://github.com/snide/sphinx_rtd_theme
+#
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [ "/usr/local/lib/python2.7/site-packages", ]
 
 # Language to be used for generating the HTML full-text search index.
 # Sphinx supports the following languages:
