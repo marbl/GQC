@@ -98,8 +98,8 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
     mathapmeroutput = "KmerMap.mat"
     pathapmeroutput = "KmerMap.pat"
     matpathapmeroutput = "KmerMap.matpat"
-    assemblystub = re.sub("\.fa.*", "", queryfasta)
-    assemblystub = re.sub(".*/", "", assemblystub)
+    assemblystub = re.sub(r'\.fa.*', "", queryfasta)
+    assemblystub = re.sub(r'.*/', "", assemblystub)
     matoutputlocation = outputdir + "/" + mathapmeroutput + "." + assemblystub + ".kmers.merge.bed"
     patoutputlocation = outputdir + "/" + pathapmeroutput + "." + assemblystub + ".kmers.merge.bed"
     matpatoutputlocation = outputdir + "/" + matpathapmeroutput + "." + assemblystub + ".hapmers.merge.bed"
@@ -149,8 +149,8 @@ def map_benchmark_hapmers_onto_assembly_with_phaseblocks(queryfasta, matmarkerfi
     env['LD_LIBRARY_PATH'] = os.getcwd()
     currentdir = os.getcwd()
     phaseblockoutput = "PhaseBlocks"
-    assemblystub = re.sub("\.fa.*", "", queryfasta)
-    assemblystub = re.sub(".*/", "", assemblystub)
+    assemblystub = re.sub(r'\.fa.*', "", queryfasta)
+    assemblystub = re.sub(r'.*/', "", assemblystub)
     outputlocation = outputdir + "/" + phaseblockoutput + "." + assemblystub + ".hapmers.bed"
     tmpdir = currentdir + "/" + outputdir + "/tmp"
     command = "PhaseBlocks -v -T2 -P" + tmpdir + " " + matmarkerfile + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + phaseblockoutput
@@ -359,9 +359,9 @@ def find_hapmer_phase_blocks_with_hmm(bedfile:str, hmmphaseblockbedfile:str, sca
         exit(1)
 
     shortmathap = re.sub("_{0,1}not.*", "", mathap)
-    shortmathap = re.sub(".*\.", "", shortmathap)
-    shortpathap = re.sub("_{0,1}not.*", "", pathap)
-    shortpathap = re.sub(".*\.", "", shortpathap)
+    shortmathap = re.sub(r'.*\.', "", shortmathap)
+    shortpathap = re.sub(r'_{0,1}not.*', "", pathap)
+    shortpathap = re.sub(r'.*\.', "", shortpathap)
     logger.debug("Using " + shortmathap + " for first haplotype name and " + shortpathap + " for second")
     phaseblockbedstring = ""
     mathap1color = '255,0,0'
