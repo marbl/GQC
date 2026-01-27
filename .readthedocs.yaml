@@ -10,15 +10,15 @@ build:
   tools:
     python: "3.13"
 
+# point to requirements file so theme is ensured
+python:
+  install:
+    - requirements: docs/requirements.txt
+
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
    configuration: docs/conf.py
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats: all
-
-# point to requirements file so theme is ensured
-python:
-  install:
-    - requirements: docs/requirements.txt
 

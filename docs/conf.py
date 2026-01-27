@@ -25,7 +25,9 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+        'sphinx_rtd_theme',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -185,12 +187,12 @@ html_static_path = ['_static']
 #    https://read-the-docs.readthedocs.org/en/latest/theme.html
 #    https://github.com/snide/sphinx_rtd_theme
 #
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [ "/usr/local/lib/python2.7/site-packages", ]
+#on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+#
+#if not on_rtd:  # only import and set the theme if we're building docs locally
+    #import sphinx_rtd_theme
+    #html_theme = 'sphinx_rtd_theme'
+    #html_theme_path = [ "/usr/local/lib/python2.7/site-packages", ]
 
 # Language to be used for generating the HTML full-text search index.
 # Sphinx supports the following languages:
