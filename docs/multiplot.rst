@@ -1,8 +1,8 @@
 
 .. _readbench:
 
-Plotting Multiple GQC Runs
-=====================
+Plotting Multiple GQC Runs Together
+===================================
 
 Plotting GQC results for multiple assemblies together in single plots
 ---------------------------------------------------------------------
@@ -17,7 +17,8 @@ Plotting GQC results for multiple assemblies together in single plots
 Optionally, you can add a fifth column to the assembly file containing a hex-formatted color (e.g., #6699CC) to be used in plots for that assembly. If you include a fifth column for one assembly, you must include five columns for all of them. If your file has only four columns, GQC's default colors will be used. The usage for "multiplot" is
 
 ::
-  multiplot --inputfile <assembly file> --output <directory name for output plots> --config <GQC config file>
 
- The config file option is not required if you have a GQC config file in your current working directory named "benchconfig.txt". The inputfile and output options are required, and the output directory will be created if it doesn't already exist.
+ multiplot --inputfile <assembly file> --output <directory name for output plots> --config <GQC config file>
+
+As for other GQC commands, passing a config file option is not required if you have a GQC config file in your current working directory named "benchconfig.txt". The inputfile and output options are required, and the output directory will be created if it doesn't already exist.
 

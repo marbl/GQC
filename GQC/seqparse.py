@@ -13,8 +13,18 @@ logger = logging.getLogger(__name__)
 def write_genome_bedfiles(queryobj, refobj, args, benchparams, outputfiles, bedobjects):
 
     write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects)
-    write_test_genome_bedfile(queryobj, args, outputfiles, bedobjects)
-    find_all_ns(queryobj, args, outputfiles, bedobjects)
+    write_whole_genome_bedfile(queryobj, args, outputfiles, bedobjects, "testgenomeregions", "testgenomebed")
+    write_whole_genome_bedfile(refobj, args, outputfiles, bedobjects, "benchgenomeregions", "benchgenomebed")
+    # did the command-line arguments specify a pre-existing bedfile of N-stretch locations?
+    if hasattr(args, 'n_bedfile'):
+        user_n_file = args.n_bedfile
+    else:
+        user_n_file = None
+
+    find_all_ns(queryobj, args, user_n_file, outputfiles, bedobjects, "testnregions", "testnonnregions", "testnbed", "testnonnbed")
+
+    # if bench config file has an nstretchfile, use it and complement to find benchmark non-N files:
+    find_all_ns(refobj, args, None, outputfiles, bedobjects, "benchnregions", "benchnonnregions", "benchnbed", "benchnonnbed")
 
 # write_excluded_bedfile function is written for assembly benchmarking only, not read benchmarking:
 def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
@@ -76,18 +86,18 @@ def write_included_bedfile(refobj, args, benchparams, outputfiles):
 
     return benchintervals
 
-def write_test_genome_bedfile(queryobj, args, outputfiles, bedobjects):
+def write_whole_genome_bedfile(fastaobj, args, outputfiles, bedobjects, regionskey, regionfilekey):
 
     genomebedstring = ""
-    for scaffold in queryobj.references:
-        scaffoldlength = queryobj.get_reference_length(scaffold)
+    for scaffold in fastaobj.references:
+        scaffoldlength = fastaobj.get_reference_length(scaffold)
         scaffstring = scaffold + "\t0\t" + str(scaffoldlength) + "\n"
         genomebedstring += scaffstring
-    bedobjects["testgenomeregions"] = pybedtools.BedTool(genomebedstring, from_string = True)
+    bedobjects[regionskey] = pybedtools.BedTool(genomebedstring, from_string = True)
 
     # write bed file if it doesn't exist yet
-    if not os.path.exists(outputfiles["testgenomebed"]):
-        bedobjects["testgenomeregions"].sort().saveas(outputfiles["testgenomebed"])
+    if not os.path.exists(outputfiles[regionfilekey]):
+        bedobjects[regionskey].sort().saveas(outputfiles[regionfilekey])
 
     return 0
 
@@ -105,13 +115,9 @@ def write_nonincluded_file(refobj, includedbed, nonincludedbed):
 
     return 0
 
-def find_all_ns(queryobj, args, outputfiles, bedobjects)->list:
-
-    # did the command-line arguments specify a pre-existing bedfile of N-stretch locations?
-    if hasattr(args, 'n_bedfile'):
-        user_n_file = args.n_bedfile
-    else:
-        user_n_file = None
+# If existingnfile is passed in the third argument, it will be read and complemented to find non-N regions. If
+#    no existing N file is passed, third argument must be "None"
+def find_all_ns(fastaobj, args, user_n_file, outputfiles, bedobjects, nregionkey, nonnregionkey, nbedfilekey, nonnbedfilekey)->list:
 
     if not user_n_file:
         p = re.compile("N+")
@@ -132,7 +138,7 @@ def find_all_ns(queryobj, args, outputfiles, bedobjects)->list:
                 n_interval_dict[chrom].append(n_interval)
             else:
                 n_interval_dict[chrom] = [n_interval]
-        for ref in queryobj.references:
+        for ref in fastaobj.references:
             if ref not in n_interval_dict.keys():
                 n_interval_dict[ref] = []
             contignum = 1
@@ -142,16 +148,16 @@ def find_all_ns(queryobj, args, outputfiles, bedobjects)->list:
                 contigbedstring += ref + "\t" + str(contigstart) + "\t" + str(interval.start) + "\t" + interval_name + "\n"
                 contignum = contignum + 1
                 contigstart = interval.end
-            refend = queryobj.get_reference_length(ref)
+            refend = fastaobj.get_reference_length(ref)
             interval_name = ref + "." + str(contignum)
             contigbedstring += ref + "\t" + str(contigstart) + "\t" + str(refend) + "\t" + interval_name + "\n"
     else:
-        for ref in queryobj.references:
+        for ref in fastaobj.references:
             contignum = 1
             contigstart = 0
             findstring = 'N' * args.minns
-            chromseq = queryobj.fetch(ref).upper()
-            refend = queryobj.get_reference_length(ref)
+            chromseq = fastaobj.fetch(ref).upper()
+            refend = fastaobj.get_reference_length(ref)
             start = chromseq.find(findstring)
             while start != -1:
                 end = start + args.minns
@@ -171,13 +177,13 @@ def find_all_ns(queryobj, args, outputfiles, bedobjects)->list:
             contigname = ref + "." + str(contignum)
             contigbedstring += ref + "\t" + str(contigstart) + "\t" + str(refend) + "\t" + contigname + "\n"
 
-        bedobjects["testnonnregions"] = pybedtools.BedTool(contigbedstring, from_string = True)
-        bedobjects["testnregions"] = pybedtools.BedTool(gapbedstring, from_string = True)
+        bedobjects[nonnregionkey] = pybedtools.BedTool(contigbedstring, from_string = True)
+        bedobjects[nregionkey] = pybedtools.BedTool(gapbedstring, from_string = True)
 
-    if outputfiles["testnonnbed"] and not os.path.exists(outputfiles["testnonnbed"]):
-        bedobjects["testnonnregions"].sort().saveas(outputfiles["testnonnbed"])
-    if outputfiles["testnbed"] and not os.path.exists(outputfiles["testnbed"]):
-        bedobjects["testnregions"].sort().saveas(outputfiles["testnbed"])
+    if outputfiles[nonnbedfilekey] and not os.path.exists(outputfiles[nonnbedfilekey]):
+        bedobjects[nonnregionkey].sort().saveas(outputfiles[nonnbedfilekey])
+    if outputfiles[nbedfilekey] and not os.path.exists(outputfiles[nbedfilekey]):
+        bedobjects[nregionkey].sort().saveas(outputfiles[nbedfilekey])
 
     return 0
 
@@ -258,7 +264,7 @@ def write_assembly_bedfiles(fastaobj, args, compareparams, happrefix, bedobjects
     # write a bed file of locations of Ns
     testoutputdict["testnonnbed"] = args.prefix + "/" + happrefix + ".atgcseq.bed"
     testoutputdict["testnbed"] = args.prefix + "/" + happrefix + ".nlocs.bed"
-    find_all_ns(fastaobj, args, testoutputdict, testbeddict)
+    find_all_ns(fastaobj, args, None, testoutputdict, testbeddict, "testnregions", "testnonnregions", "testnbed", "testnonnbed")
     bedobjects[happrefix + "nregions"] = testbeddict["testnregions"]
     bedobjects[happrefix + "nonnregions"] = testbeddict["testnonnregions"]
 

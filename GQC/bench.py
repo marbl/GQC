@@ -117,7 +117,7 @@ def read_config_data(args)->dict:
         with open(configfile, "r") as cr:
             configline = cr.readline()
             while configline:
-                p = re.compile(r'^([^#\s]+):+\s+(\S+)$')
+                p = re.compile(r'^([^#\s]+):+\s+(\S+)\s*$')
                 match = p.match(configline)
                 if match:
                     key = match.group(1)
@@ -130,13 +130,18 @@ def read_config_data(args)->dict:
             resourcedir = configvals["resourcedir"]
             if (os.path.exists(resourcedir)):
                 for configkey in configvals.keys():
-                    if configvals[configkey][0] != "/":
+                    if configvals[configkey][0] != "/" and configkey != 'matpattern' and configkey != 'patpattern':
                         configvals[configkey] = resourcedir + "/" + configvals[configkey]
             else:
                 logger.critical("The resource directory specified in the config file as \"resourcedir\" does not exist. Please change it to the location of files from the resource tarball")
                 print("The resource directory specified in the config file as \"resourcedir\" does not exist. Please change it to the location of files from the resource tarball")
                 exit(1)
-    
+   
+    if 'matpattern' not in configvals.keys():
+        configvals['matpattern'] = 'MAT'
+    if 'patpattern' not in configvals.keys():
+        configvals['patpattern'] = 'PAT'
+
     return configvals
 
 def main() -> None:
@@ -162,6 +167,10 @@ def main() -> None:
 
     # dictionary of parameters from the benchmark configuration file:
     benchparams = read_config_data(args)
+    if "matbenchmark" in benchparams.keys():
+        print(benchparams["matbenchmark"])
+    else:
+        print("matbenchmark is not in config parameters")
 
     # pysam objects for the benchmark and test assembly fasta files:
     ref = Path(args.reffasta)
@@ -177,50 +186,64 @@ def main() -> None:
     # dictionary of this run's output file names:
     outputfiles = output.name_output_files(args, outputdir)
 
-    logger.info("Step 1 (of 11): Writing bed files for excluded regions, test assembly scaffold spans, lengths, N stretches, and contigs (ignoring stretches of less than " + str(args.minns) + " Ns)")
+    logger.info("Step 1 (of 11): Writing bed files for excluded regions, test assembly and benchmark scaffold spans, lengths, N stretches, and contigs (ignoring stretches of less than " + str(args.minns) + " Ns)")
     bedregiondict = {}
-    # merged excluded regions are saved as BedTool object "allexcludedregions" in bedregiondict here:
+    # merged excluded regions are saved as BedTool object "allexcludedregions" in bedregiondict here
     seqparse.write_genome_bedfiles(queryobj, refobj, args, benchparams, outputfiles, bedregiondict)
    
 
     # find general stats about contig/scaffold lengths, N/L50's, etc.:
     logger.info("Step 2 (of 11): Writing general statistics about " + args.assembly + " assembly")
-    benchmark_stats = stats.write_general_assembly_stats(refobj, queryobj, bedregiondict["testnonnregions"], bedregiondict["testnregions"], outputfiles, args)
+    benchmark_stats = stats.write_general_assembly_stats(refobj, queryobj, bedregiondict["testnonnregions"], bedregiondict["testnregions"], outputfiles, benchparams, args)
 
     logger.info("Step 3 (of 11): Phasing assembly regions using benchmark's haplotype-specific kmers")
-    if args.merquryblocks:
-        markerbed = outputfiles["phasemarkerbed"]
+    if (not os.path.exists(outputfiles["phaseblockbed"])) or (os.path.getsize(outputfiles["phaseblockbed"]) == 0):
+        if args.merquryblocks:
+            markerbed = outputfiles["phasemarkerbed"]
+        else:
+            markerbed = outputfiles["mergedphasemarkerbed"]
+        if not os.path.exists(markerbed):
+            print("File " + markerbed + " does not exist--calling FASTK to generate one")
+            logger.info("File " + markerbed + " does not exist--calling FASTK to generate one")
+            check_for_fastk()
+            phasing.map_benchmark_hapmers_onto_assembly(args.queryfasta, benchparams["matmarkerdb"], benchparams["patmarkerdb"], outputdir, outputfiles)
+    
+        if args.merquryblocks: # use Merqury phase block algorithm
+            logger.info("Using Merqury algorithm with shortnum " + str(args.shortnum) + " and shortlimit " + str(args.shortlimit) + " to find phase blocks")
+            shortnum = args.shortnum
+            shortlimit = args.shortlimit
+            matpattern = benchparams["matpattern"]
+            phaseblockints = phasing.find_phase_blocks_from_marker_bed(markerbed, queryobj.references, shortnum, shortlimit, matpattern)
+        else: # use HMM algorithm to find phase blocks
+            logger.info("Using HMM with emission probability " + str(args.alpha) + " and transition probability " + str(args.beta) + " to find phase blocks")
+            alpha = args.alpha
+            transitionprob = args.beta
+            phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(markerbed, outputfiles["hmmphaseblockbed"], queryobj, alpha, transitionprob, 0)
+        phaseblockints.saveas(outputfiles["phaseblockbed"])
+        matphaseblockints = phaseblockints.filter(lambda x: x.name=="mat")
+        patphaseblockints = phaseblockints.filter(lambda x: x.name=="pat")
     else:
-        markerbed = outputfiles["mergedphasemarkerbed"]
-    if not os.path.exists(markerbed):
-        print("File " + markerbed + " does not exist--calling FASTK to generate one")
-        logger.info("File " + markerbed + " does not exist--calling FASTK to generate one")
-        check_for_fastk()
-        phasing.map_benchmark_hapmers_onto_assembly(args.queryfasta, benchparams["matmarkerdb"], benchparams["patmarkerdb"], outputdir, outputfiles)
+        logger.info("Skipping assembly phasing as file " + outputfiles["phaseblockbed"] + " already exists and is not empty")
+        phaseblockints = BedTool(outputfiles["phaseblockbed"])
+        matphaseblockints = phaseblockints.filter(lambda x: x.name=="mat")
+        patphaseblockints = phaseblockints.filter(lambda x: x.name=="pat")
 
-    if args.merquryblocks: # use Merqury phase block algorithm
-        logger.info("Using Merqury algorithm with shortnum " + str(args.shortnum) + " and shortlimit " + str(args.shortlimit) + " to find phase blocks")
-        shortnum = args.shortnum
-        shortlimit = args.shortlimit
-        phaseblockints = phasing.find_phase_blocks_from_marker_bed(markerbed, queryobj.references, shortnum, shortlimit)
-    else: # use HMM algorithm to find phase blocks
-        logger.info("Using HMM with emission probability " + str(args.alpha) + " and transition probability " + str(args.beta) + " to find phase blocks")
-        alpha = args.alpha
-        transitionprob = args.beta
-        phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(markerbed, outputfiles["hmmphaseblockbed"], queryobj, alpha, transitionprob, 0)
-    phaseblockints.saveas(outputfiles["phaseblockbed"])
-    matphaseblockints = phaseblockints.filter(lambda x: x.name=="mat")
-    patphaseblockints = phaseblockints.filter(lambda x: x.name=="pat")
     #stats.write_phase_block_stats(phaseblockints, outputfiles, benchmark_stats, args)
 
     # align test assembly separately to maternal and paternal haplotypes:
     logger.info("Step 4 (of 11): Aligning assembly separately to maternal and paternal haplotypes of the benchmark and gathering trimmed alignments of phased assembly regions to their corresponding haplotypes")
-    if not os.path.exists(outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam"):
+
+    trimmedphasedbam = outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam"
+    if not os.path.exists(trimmedphasedbam):
+        logger.debug("Creating trimmed sorted bam " + trimmedphasedbam)
         [matbenchbamfile, patbenchbamfile] = align.align_assembly_to_benchmark_haplotypes(args.queryfasta, outputfiles, benchparams, args)
     
         # read in alignments from BAM format, filtering out secondaries and finding the optimal alignment on the correct haplotype for each phase block in the assembly
 
-        benchdiploidheaderfile = benchparams["benchdiploidheader"]
+        benchdiploidheaderstring = "@HD\tVN:1.6\tSO:coordinate\n"
+        for refentry in refobj.references:
+            entrylength = refobj.get_reference_length(refentry)
+            benchdiploidheaderstring += "@SQ\tSN:" + refentry + "\tLN:"  + str(entrylength) + "\n"
     
         [mataligns, matalignedintervals] = alignparse.index_aligns_by_boundaries(matbenchbamfile, args)
         [pataligns, patalignedintervals] = alignparse.index_aligns_by_boundaries(patbenchbamfile, args)
@@ -238,14 +261,13 @@ def main() -> None:
         alignparse.write_aligns_to_bamfile(pattrimmedbamfile, patblocksubaligns, headerbam=patbenchbamfile, sort=False)
 
         # now merge the maternal and paternal trimmed files to a single file with a diploid header, sort, and index:
-        alignparse.merge_trimmed_bamfiles(mattrimmedbamfile, pattrimmedbamfile, benchdiploidheaderfile, outputfiles)
+        alignparse.merge_trimmed_bamfiles(mattrimmedbamfile, pattrimmedbamfile, benchdiploidheaderstring, outputfiles)
     else: 
-        logger.info("Skipping step 4 (of 11): Trimmed phased alignments already exist in " + outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam")
-
-    trimmedphasedbam = outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam"
+        logger.info("Skipping step 4 (of 11): Trimmed phased alignments already exist in " + trimmedphasedbam)
 
     logger.info("Step 5 (of 11): Filtering alignment to include primary best increasing subset")
     if not args.nosplit:
+        logger.info("Splitting alignments at indels greater than or equal to " + str(args.splitdistance) + " bases")
         splitbam_name = trimmedphasedbam.replace(".bam", ".split.bam")
         splitsortbam_name = splitbam_name.replace(".bam", ".sort.bam")
         if not os.path.exists(splitsortbam_name):
@@ -253,11 +275,13 @@ def main() -> None:
             alignparse.split_aligns_and_sort(splitbam_name, alignobj, minindelsize=args.splitdistance)
             pysam.sort("-o", splitsortbam_name, splitbam_name)
             pysam.index(splitsortbam_name)
+            os.remove(splitbam_name)
         alignobj = pysam.AlignmentFile(splitsortbam_name, "rb")
         aligndata = alignparse.read_bam_aligns(alignobj, args.minalignlength)
         rlis_aligndata = mummermethods.filter_aligns(aligndata, "target")
     else:
-        alignobj = pysam.AlignmentFile(bamfile, "rb")
+        logger.info("Not splitting alignments--using alignments at least " + str(args.minalignlength) + " bases from " + trimmedphasedbam)
+        alignobj = pysam.AlignmentFile(trimmedphasedbam, "rb")
         aligndata = alignparse.read_bam_aligns(alignobj, args.minalignlength)
         rlis_aligndata = mummermethods.filter_aligns(aligndata, "target")
 
@@ -275,7 +299,7 @@ def main() -> None:
        hetarrays = phasing.sort_chrom_hetsite_arrays(hetsites)
 
        pafaligns = None
-       [refcoveredbed, querycoveredbed, variants, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts] = alignparse.write_bedfiles(alignobj, pafaligns, refobj, queryobj, hetarrays, outputfiles["testmatcovered"], outputfiles["testpatcovered"], outputfiles["truthcovered"], outputfiles["coveredhetsitealleles"], bedregiondict["allexcludedregions"], args)
+       [refcoveredbed, querycoveredbed, variants, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts] = alignparse.write_bedfiles(alignobj, pafaligns, refobj, queryobj, hetarrays, outputfiles["testmatcovered"], outputfiles["testpatcovered"], outputfiles["truthcovered"], outputfiles["coveredhetsitealleles"], bedregiondict["allexcludedregions"], benchparams, args)
 
        ## create merged unique outputfiles:
        [mergedtruthcoveredbed, outputfiles["mergedtruthcovered"]] = bedtoolslib.mergebed(outputfiles["truthcovered"])
@@ -283,12 +307,12 @@ def main() -> None:
        [mergedtestpatcoveredbed, outputfiles["mergedtestpatcovered"]] = bedtoolslib.mergebed(outputfiles["testpatcovered"])
 
        logger.info("Step 7 (of 11): Writing primary alignment statistics about " + args.assembly + " assembly")
-       stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, args)
+       stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, benchparams, args)
 
        if alignobj is not None:
            ## classify variant errors as phasing or novel errors:
-           logger.info("Step 8 (of 11): Writing phase switch statistics")
-           stats.write_het_stats(outputfiles, benchmark_stats, args)
+           logger.info("Step 8 (of 11): Writing phase switch statistics to generalstats.txt file")
+           stats.write_het_stats(outputfiles, benchmark_stats, benchparams, args)
            logger.info("Step 9 (of 11): Determining whether errors are switched haplotype or novel")
            errors.classify_errors(refobj, queryobj, variants, hetsites, outputfiles, benchparams, benchmark_stats, args)
            stats.write_qv_stats(benchmark_stats, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, outputfiles, args)
@@ -304,7 +328,7 @@ def main() -> None:
     if not no_rscript:
         logger.info("Step 11 (of 11): Creating plots")
         if not args.structureonly:
-            plots.plot_benchmark_align_coverage(args.assembly, args.benchmark, outputdir, benchparams)
+            plots.plot_benchmark_align_coverage(args.assembly, args.benchmark, outputdir, outputfiles["benchgenomebed"], outputfiles["benchnbed"], benchparams["matpattern"])
             plots.plot_testassembly_align_coverage(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
             plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
             if alignobj is not None:
@@ -312,7 +336,7 @@ def main() -> None:
                 if len(alignedscorecounts) > 0:
                     plots.plot_qv_score_concordance(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
         plots.plot_svcluster_align_plots(args.assembly, args.benchmark, outputfiles["alignplotdir"], refobj, mode='bench')
-        plots.run_ngax_plot(args.assembly, args.benchmark, outputdir, benchparams["nonnseq"], benchparams["resourcedir"])
+        plots.run_ngax_plot(args.assembly, args.benchmark, outputdir, outputfiles["benchnonnbed"], benchparams["resourcedir"])
         plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
         plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
         plots.plot_assembly_discrepancy_counts(args.assembly, args.benchmark,  outputdir)
@@ -320,7 +344,7 @@ def main() -> None:
             assemblyqv = benchmark_stats["assemblyqv"]
         else:
             assemblyqv = "NA"
-        plots.plot_assembly_summary_stats(args.assembly, args.benchmark,  outputdir, benchparams["nonnseq"], benchparams["resourcedir"], assemblyqv=assemblyqv)
+        plots.plot_assembly_summary_stats(args.assembly, args.benchmark,  outputdir, outputfiles["benchnonnbed"], benchparams["resourcedir"], assemblyqv=assemblyqv)
 
 
 if __name__ == "__main__":

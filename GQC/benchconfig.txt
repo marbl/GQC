@@ -13,4 +13,3 @@ patmarkerdb: v1.1.patnotmat.k40.hap
 matbenchmark: v1.1.mat.fasta.gz
 patbenchmark: v1.1.pat.fasta.gz
 winnowmaprepkmers: v1.1.repetitive_k19.txt
-benchdiploidheader: v1.1.header.sam

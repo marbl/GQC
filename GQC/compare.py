@@ -352,7 +352,7 @@ def main() -> None:
         excludedregions = None
         hetarraybed = None
 
-        [refcoveredbed, querycoveredbed, variants, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts] = alignparse.write_bedfiles(alignobj, pafaligns, refobj, queryobj, hetsites, querycoveredbedfile, outputpat, refcoveredbedfile, hetarraybed, excludedregions, args)
+        [refcoveredbed, querycoveredbed, variants, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts] = alignparse.write_bedfiles(alignobj, pafaligns, refobj, queryobj, hetsites, querycoveredbedfile, outputpat, refcoveredbedfile, hetarraybed, excludedregions, compareparams, args)
 
         # create merged unique outputfiles:
         [mergedrefcoveredbed, mergedrefcoveredbedfile] = bedtoolslib.mergebed(refcoveredbedfile)
@@ -366,7 +366,7 @@ def main() -> None:
         comparisonoutputfiles[comparison]['mergedquerycoveredbed'] = mergedquerycoveredbed
 
         logger.info("Step 7 (of 11): Writing primary alignment statistics about " + comparisondata[comparison]['queryprefix'] + " aligned to " + comparisondata[comparison]['refprefix'])
-        #stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, args)
+        #stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, compareparams, args)
 
         if alignobj is not None:
             # classify variant errors as phasing or novel errors:
@@ -503,13 +503,13 @@ def main() -> None:
     if not no_rscript:
         logger.info("Step 11 (of 11): Creating plots")
         #if not args.structureonly:
-            #plots.plot_benchmark_align_coverage(args.assembly, args.benchmark, outputdir, benchparams)
-            #plots.plot_testassembly_align_coverage(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+            #plots.plot_benchmark_align_coverage(args.assembly, args.benchmark, outputdir, compareparams)
+            #plots.plot_testassembly_align_coverage(args.assembly, args.benchmark, outputdir, compareparams["resourcedir"])
             #plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
             #if alignobj is not None:
-                #plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+                #plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, compareparams["resourcedir"])
                 #if len(alignedscorecounts) > 0:
-                    #plots.plot_qv_score_concordance(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+                    #plots.plot_qv_score_concordance(args.assembly, args.benchmark, outputdir, compareparams["resourcedir"])
         for comparison in comparisondata.keys():
             refobj = comparisondata[comparison]['refobj']
             plots.plot_svcluster_align_plots(args.qname, args.rname, outputfiles["alignplotdir"], refobj, mode='compare', prefix=comparison)
@@ -517,3 +517,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

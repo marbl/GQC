@@ -15,9 +15,11 @@ outputdir <- ifelse(!( is.na(args[3])), args[3], ".")
 genomefile <- ifelse(!( is.na(args[4])), args[4], ".")
 nlocfile <- ifelse(!( is.na(args[5])), args[5], ".")
 plottitle <- ifelse(!( is.na(args[6])), args[6], paste(c(benchname, " aligned coverage vs. ", genomename), sep="", collapse=""))
+matstring <- ifelse(!( is.na(args[7])), args[7], "MAT")
 benchgenome <- toGRanges(genomefile)
 nlocranges <- toGRanges(nlocfile)
 
+allchroms <- seqnames(benchgenome)
 maternalchroms <- paste0("chr", c(1:22, "X"), "_MATERNAL")
 paternalchroms <- paste0("chr", c(1:22, "Y"), "_PATERNAL")
 chroms <- c(maternalchroms, paternalchroms)
@@ -83,7 +85,7 @@ plot_coverage_vs_benchmark <- function(phasingerrorgranges=NA, snperrorgranges=N
   
   bordercol = 'black'
   borderlwd = 0.2
-  aligncolor <- ifelse(str_detect(benchcovereddf$V1, "MAT"), "green", "blue")
+  aligncolor <- ifelse(str_detect(benchcovereddf$V1, matstring), "green", "blue")
   kp <- plotKaryotype(genome=benchgenome, plot.type=1, chromosomes=chroms, main=plottitle, cex=0.5, plot.params=pp)
   kpAddBaseNumbers(kp, tick.dist = 20000000, tick.len = 10, cex=0.3)
   kpRect(kp, data=benchcoveredranges, border=bordercol, lwd=borderlwd, col=aligncolor, data.panel="ideogram", y0=rep(0, length(benchcoveredranges)), y1=rep(1, length(benchcoveredranges)))

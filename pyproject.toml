@@ -10,7 +10,7 @@ where = [""]
 
 [project]
 name = "GQC"
-version = "0.1"
+version = "1.1.0-beta"
 authors = [
   { name="Nancy F. Hansen", email="nhansen@mail.nih.gov" },
 ]
@@ -33,6 +33,7 @@ license = {file = "LICENSE"}
 GQC = "GQC.bench:main"
 assemblybench = "GQC.bench:main"
 gethets = "GQC.gethets:main"
+mononucs = "GQC.mononucs:main"
 readbench = "GQC.readbench:main"
 assemblycompare = "GQC.compare:main"
 bamdiscrepancies = "GQC.bamdiscrepancies:main"

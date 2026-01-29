@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # query start is always less than query end regardless of strand. query left always corresponds to ref start, 
 # and so will be greater than query right when strand is reversed--all four are 1-based
-def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, testpatbed, truthbed, hetallelebed, excludedbedobj, args):
+def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, testpatbed, truthbed, hetallelebed, excludedbedobj, benchparams, args):
 
     refcoveredstring = ""
     querycoveredstring = ""
@@ -34,62 +34,60 @@ def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, te
     snverrorscorecounts = []
     indelerrorscorecounts = []
 
-    if ((testmatbed is not None and not os.path.exists(testmatbed)) or (testpatbed is not None and not os.path.exists(testpatbed)) or (truthbed is not None and not os.path.exists(truthbed))):
-        if bamobj is not None:
-            for align in bamobj.fetch():
-                if align.is_secondary:
-                    continue
-                if align.reference_length >= args.minalignlength:
-                    query, querystart, queryend, ref, refstart, refend, strand = retrieve_align_data(align)
-                    if strand == "F":
-                        queryleft = querystart
-                        queryright = queryend
-                    else:
-                        queryleft = queryend
-                        queryright = querystart
-                    querynamestring = query + "." + str(queryleft) + "." + str(queryright)
-                    refnamestring = ref + "." + str(refstart) + "." + str(refend) + "." + strand
-                    querycoveredstring += query + "\t" + str(querystart - 1) + "\t" + str(queryend) + "\t" + refnamestring + "\n"
-                    refcoveredstring += ref + "\t" + str(refstart - 1) + "\t" + str(refend) + "\t" + querynamestring + "\n"
-                    if user_variantfile is None:
-                        variants.extend(align_variants(align, queryobj, query, querystart, queryend, refobj, ref, refstart, refend, strand, hetsites, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, True))
-            # mark variants that are in excluded regions:
-            logger.debug("Beginning to exclude variants in excluded regions")
-            if excludedbedobj:
-                variants = exclude_variants(variants, excludedbedobj)
-                logger.debug("Finished excluding variants in excluded regions")
-        else:
-            for pafdict in pafaligns:
-                # all start/endpoints are 1-based
-                query = pafdict['query']
-                querystart = pafdict['querystart']
-                queryend = pafdict['queryend']
-                if querystart < queryend:
+    if bamobj is not None:
+        for align in bamobj.fetch():
+            if align.is_secondary:
+                continue
+            if align.reference_length >= args.minalignlength:
+                query, querystart, queryend, ref, refstart, refend, strand = retrieve_align_data(align)
+                if strand == "F":
                     queryleft = querystart
                     queryright = queryend
                 else:
                     queryleft = queryend
                     queryright = querystart
-                ref = pafdict['target']
-                refstart = pafdict['targetstart']
-                refend = pafdict['targetend']
-                strand = pafdict['strand']
-
-                querynamestring = query + "." + str(querystart) + "." + str(queryend)
+                querynamestring = query + "." + str(queryleft) + "." + str(queryright)
                 refnamestring = ref + "." + str(refstart) + "." + str(refend) + "." + strand
-                querycoveredstring += query + "\t" + str(queryleft - 1) + "\t" + str(queryright) + "\t" + refnamestring + "\n"
+                querycoveredstring += query + "\t" + str(querystart - 1) + "\t" + str(queryend) + "\t" + refnamestring + "\n"
                 refcoveredstring += ref + "\t" + str(refstart - 1) + "\t" + str(refend) + "\t" + querynamestring + "\n"
-
-        refcoveredbed = pybedtools.BedTool(refcoveredstring, from_string = True)
-        querycoveredbed = pybedtools.BedTool(querycoveredstring, from_string = True)
+                if user_variantfile is None:
+                    variants.extend(align_variants(align, queryobj, query, querystart, queryend, refobj, ref, refstart, refend, strand, hetsites, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, True))
+        # mark variants that are in excluded regions:
+        logger.debug("Beginning to exclude variants in excluded regions")
+        if excludedbedobj:
+            variants = exclude_variants(variants, excludedbedobj)
+            logger.debug("Finished excluding variants in excluded regions")
     else:
-        logger.info("Skipping alignment parsing because alignment coverage bedfiles already exist--delete them to reprocess")
-        refcoveredbed = pybedtools.BedTool(truthbed)
+        for pafdict in pafaligns:
+            # all start/endpoints are 1-based
+            query = pafdict['query']
+            querystart = pafdict['querystart']
+            queryend = pafdict['queryend']
+            if querystart < queryend:
+                queryleft = querystart
+                queryright = queryend
+            else:
+                queryleft = queryend
+                queryright = querystart
+            ref = pafdict['target']
+            refstart = pafdict['targetstart']
+            refend = pafdict['targetend']
+            strand = pafdict['strand']
+
+            querynamestring = query + "." + str(querystart) + "." + str(queryend)
+            refnamestring = ref + "." + str(refstart) + "." + str(refend) + "." + strand
+            querycoveredstring += query + "\t" + str(queryleft - 1) + "\t" + str(queryright) + "\t" + refnamestring + "\n"
+            refcoveredstring += ref + "\t" + str(refstart - 1) + "\t" + str(refend) + "\t" + querynamestring + "\n"
+
+    refcoveredbed = pybedtools.BedTool(refcoveredstring, from_string = True)
+    querycoveredbed = pybedtools.BedTool(querycoveredstring, from_string = True)
 
     # if testpatbed is None, a single bed file should be written to the file passed as testmatbed:
     if not os.path.exists(testmatbed) or (testpatbed is not None and not os.path.exists(testpatbed)):
-        phap1 = re.compile(r'.*MAT.*')
-        phap2 = re.compile(r'.*PAT.*')
+        matpattern = benchparams['matpattern']
+        patpattern = benchparams['patpattern']
+        phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+        phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
         with open(testmatbed, "w") as tmb:
             for testint in sorted(querycoveredbed, key=lambda h: (h.chrom, h.start, h.stop)):
                 if testpatbed is None or phap1.match(testint.name):
@@ -101,12 +99,12 @@ def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, te
                     if phap2.match(testint.name):
                         tpb.write(testint.chrom + "\t" + str(testint.start) + "\t" + str(testint.end) + "\t" + testint.name + "\n")
 
-    if not os.path.exists(truthbed):
+    if not os.path.exists(truthbed) or os.path.getsize(truthbed) == 0:
         with open(truthbed, "w") as rb:
             for truthint in sorted(refcoveredbed, key=lambda h: (h.chrom, h.start, h.stop)):
                 rb.write(truthint.chrom + "\t" + str(truthint.start) + "\t" + str(truthint.end) + "\t" + truthint.name + "\n")
 
-    if hetsites and hetallelebed is not None and not os.path.exists(hetallelebed):
+    if hetsites and hetallelebed is not None and not os.path.exists(hetallelebed) and os.path.getsize(hetallelebed) > 0:
         phasing.write_hetallele_bed(hetsitealleles, hetallelebed)
 
     if user_variantfile is not None:
@@ -294,7 +292,8 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                     queryquals = alignedqualscores[querycurrentoffset-extendleft:querycurrentoffset+extendright]
                     qualscores = [int(x) for x in queryquals]
                 if len(qualscores)==0:
-                    logger.debug("Variant with pos " + ref + ":" + str(refpos+refstart-extendleft) + "-" + str(refpos+refstart+oplength+extendright) + " name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " and length of qualscores is zero!")
+                    variantname = variantname + ""
+                    #logger.debug("Variant with pos " + ref + ":" + str(refpos+refstart-extendleft) + "-" + str(refpos+refstart+oplength+extendright) + " name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " and length of qualscores is zero!")
                 else:
                     numquals = len(qualscores)
                     # if even number of qual scores, drop the top one so the lower of the two medians is chosen (rather than an average, which may not be represented in the total qv score counts)
@@ -319,7 +318,7 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                 variantlist.append(varianttuple(chrom=ref, start=refpos+refstart-extendleft, end=refpos+refstart+oplength+extendright, name=variantname, vartype='INDEL', excluded=False, qvscore=indelerrorscore ))
             else:
                 variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand # positions of insertions are positions to the left of first inserted base
-                logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " was excluded")
+                #logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " was excluded")
 
         if op == 1: # insertion
             if manualdebug:
@@ -385,11 +384,11 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
             if not (matchns.match(queryallele) or matchns.match(refallele) or matchns.match(refsurroundingseq)):
                 variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand
                 #additionalfields = "0\t" + bedstrand + "\t" + str(refpos+refstart) + "\t" + str(refpos+refstart+extendright) + "\t0,0,0\t" + alignstring
-                logger.debug("Variant with pos " + ref + ":" + str(refpos+refstart-extendleft) + "-" + str(refpos+refstart+extendright) + " name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has ref surrounding seq " + refsurroundingseq)
+                #logger.debug("Variant with pos " + ref + ":" + str(refpos+refstart-extendleft) + "-" + str(refpos+refstart+extendright) + " name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has ref surrounding seq " + refsurroundingseq)
                 variantlist.append(varianttuple(chrom=ref, start=refpos+refstart-extendleft, end=refpos+refstart+extendright, name=variantname, vartype='INDEL', excluded=False, qvscore=indelerrorscore ))
             else:
                 variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand
-                logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has ref surrounding seq " + refsurroundingseq + " was excluded")
+                #logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has ref surrounding seq " + refsurroundingseq + " was excluded")
 
         # advance current positions: cases where reference coord advances (MDN=X):
         if op in [0, 2, 3, 7, 8]:
@@ -1247,11 +1246,13 @@ def write_aligns_to_samfile(samfilename:str, aligns:list, headerbam:str="test_ba
             sbfh.write(align)
 
 
-def merge_trimmed_bamfiles(mattrimmedbamfile:str, pattrimmedbamfile:str, benchdiploidheaderfile:str, outputfiles:dict, sort=True):
+def merge_trimmed_bamfiles(mattrimmedbamfile:str, pattrimmedbamfile:str, benchdiploidheaderstring:str, outputfiles:dict, sort=True):
 
     mergedtrimmedsamfile = outputfiles["trimmedphasedalignprefix"] + ".merge.dipheader.sam"
-    headerreturnval = os.system("cat " + benchdiploidheaderfile + " > " + mergedtrimmedsamfile)
-    logger.debug("Copying " + benchdiploidheaderfile + " to " + mergedtrimmedsamfile + "had return value " + str(headerreturnval))
+    with open(mergedtrimmedsamfile, "w") as sfh:
+        sfh.write(benchdiploidheaderstring)
+
+    logger.debug("Printed diploid header string to " + mergedtrimmedsamfile)
 
     mattrimmedsamreturnval = os.system("samtools view " + mattrimmedbamfile + " >> " + mergedtrimmedsamfile)
     logger.debug("Writing maternal trimmed sam alignments to " + mergedtrimmedsamfile + " had return value " + str(mattrimmedsamreturnval))
@@ -1260,6 +1261,14 @@ def merge_trimmed_bamfiles(mattrimmedbamfile:str, pattrimmedbamfile:str, benchdi
     mergedtrimmedbamfile = outputfiles["trimmedphasedalignprefix"] + ".merge.bam"
     samtobamreturnval = os.system("samtools view -bS " + mergedtrimmedsamfile + " -o " + mergedtrimmedbamfile)
     logger.debug("Converting merged trimmed sam alignments to bam had return value " + str(samtobamreturnval))
+    if pattrimmedsamreturnval == 0 and mattrimmedsamreturnval == 0 and samtobamreturnval == 0:
+        logger.debug("Removing mat/pat trimmed bam files and sam alignments")
+        os.remove(mergedtrimmedsamfile)
+        os.remove(mattrimmedbamfile)
+        os.remove(pattrimmedbamfile)
+    else:
+        logger.critical("Error merging mat/pat trimmed bam files to a single bam file--exiting")
+        exit(1)
 
     if sort:
         trimmedphasedsortbam = outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam"
@@ -1268,8 +1277,11 @@ def merge_trimmed_bamfiles(mattrimmedbamfile:str, pattrimmedbamfile:str, benchdi
         trimmedbamindexval = os.system("samtools index " + trimmedphasedsortbam)
         logger.debug("Indexing trimmed bam file had return value " + str(trimmedbamindexval))
         if trimmedbamsortreturnval==0 and trimmedbamindexval==0:
-            os.remove(mergedtrimmedsamfile)
-            return ""
+            os.remove(mergedtrimmedbamfile)
+        else:
+            logger.critical("Error sorting trimmed merged bam file " + mergedtrimmedbamfile)
+            exit(1)
         return trimmedphasedsortbam
 
     return mergedtrimmedbamfile
+

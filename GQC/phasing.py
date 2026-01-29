@@ -28,7 +28,11 @@ def read_hetsites(hetsitefile)->dict:
             hetsiteline = hfh.readline()
             while hetsiteline:
                 hetsiteline = hetsiteline.rstrip()
-                [chrom, start, end, name] = hetsiteline.split("\t")
+                hetfields = hetsiteline.split("\t")
+                chrom = hetfields[0]
+                start = hetfields[1]
+                end = hetfields[2]
+                name = hetfields[3]
                 namefields = name.split("_")
                 refallele = namefields[-3]
                 altallele = namefields[-2]
@@ -179,13 +183,13 @@ def map_benchmark_hapmers_onto_assembly_with_phaseblocks(queryfasta, matmarkerfi
 # This routine duplicates the logic of "MerToPhaseBlock" from Arang Rhie's merqury package (but ported from Java to python)
 # I've changed some variable names (e.g., "noBreak" to "includegaps") to make it easier (for me) to read:
 
-def find_phase_blocks_from_marker_bed(bedfile:str, scaffnames:list, shortnum=100, shortlimit=20000, includegaps=True):
+def find_phase_blocks_from_marker_bed(bedfile:str, scaffnames:list, shortnum=100, shortlimit=20000, includegaps=True, matpattern='MAT'):
 
     [mathap, pathap] = find_haplotype_names_in_hapmer_bedfile(bedfile)
 
     blockbedstring = ""
 
-    pmathap = re.compile(r'.*MAT.*', re.IGNORECASE)
+    pmathap = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
     matcolor = '255,0,0'
     patcolor = '0,0,255'
     gapcolor = '255,255,255'

@@ -36,6 +36,8 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('--heatmapmaxcount', type=int, required=False, help='window variant count to correspond to the red end of the heatmap spectrum')
     parser.add_argument('-g', '--gfa', type=str, required=False, help='gfa file for assembly graph to guide selection of het alignments')
     parser.add_argument('-p', '--prefix', type=str, required=False, default="hetsites", help='prefix to use in output filenames')
+    parser.add_argument('-s', '--splitchar', type=str, required=False, default="_", help='delimiter in scaffold names separating autosome names to be compared between haplotypes')
+    parser.add_argument('-c', '--chromindex', type=int, required=False, default=0, help='index of autosome name in scaffold name when split on the split character')
     parser.add_argument('--debug', action='store_true', required=False, help='print verbose output to log file for debugging purposes')
 
     return parser
@@ -68,8 +70,8 @@ def read_aligns(bamobj, args):
             query, querystart, queryend, ref, refstart, refend, strand = alignparse.retrieve_align_data(align)
             querycoords = query + ":" + str(querystart) + "-" + str(queryend)
             refcoords = ref + ":" + str(refstart) + "-" + str(refend)
-            querychrom = query.split("_")[0]
-            refchrom = ref.split("_")[0]
+            querychrom = query.split(args.splitchar)[args.chromindex]
+            refchrom = ref.split(args.splitchar)[args.chromindex]
 
             if querychrom == refchrom or (querychrom == "chrX" and refchrom == "chrY") or (querychrom == "chrY" and refchrom == "chrX"):
                 alignname = querycoords + "/" + refcoords

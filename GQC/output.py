@@ -24,6 +24,9 @@ def name_output_files(args, outputdir:str)->dict:
     else:
         files["testnbed"] = None
     files["testnonnbed"] = outputdir + "/atgcseq." + args.assembly + ".bed"
+    files["benchnbed"] = outputdir + "/nlocs." + args.benchmark + ".bed"
+    files["benchnonnbed"] = outputdir + "/atgcseq." + args.benchmark + ".bed"
+    files["benchgenomebed"] = outputdir + "/genome." + args.benchmark + ".bed"
     files["phasemarkerbed"] = outputdir + "/" + args.assembly + "." + args.benchmark + ".hapmers.bed"
     files["mergedphasemarkerbed"] = outputdir + "/" + args.assembly + "." + args.benchmark + ".hapmers.merged.bed"
     files["mergedmarkerbedwithscaffnames"] = outputdir + "/" + args.assembly + "." + args.benchmark + ".scaffnames.hapmers.merged.bed"

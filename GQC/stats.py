@@ -5,7 +5,7 @@ import pybedtools
 
 logger = logging.getLogger(__name__)
 
-def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, outputfiles, args)->dict:
+def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, outputfiles, benchparams, args)->dict:
 
     bmstats = {}
 
@@ -16,15 +16,20 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
     # total bases on benchmark haplotypes (for NG/LG calculation):
     hap1totalbases = 0
     hap2totalbases = 0
-    phap1 = re.compile(r'.*MAT.*')
-    phap2 = re.compile(r'.*PAT.*')
+    matpattern = benchparams['matpattern']
+    patpattern = benchparams['patpattern']
+    phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+    phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
     for refcontig in refobj.references:
         hap1match = phap1.match(refcontig)
         hap2match = phap2.match(refcontig)
+        logger.debug("Looking for mat/pat class of " + refcontig + " with strings " + matpattern + ", " + patpattern)
         if hap1match:
             hap1totalbases = hap1totalbases + refobj.get_reference_length(refcontig)
+            logger.debug(refcontig + " matches mat pattern")
         if hap2match:
             hap2totalbases = hap2totalbases + refobj.get_reference_length(refcontig)
+            logger.debug(refcontig + " matches pat pattern")
 
     bmstats['hap1totalbases'] = hap1totalbases # this is the total number of bases in the MATERNAL benchmark chroms
     bmstats['hap2totalbases'] = hap2totalbases # this is the total number of bases in the PATERNAL benchmark chroms
@@ -172,12 +177,14 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
 
     return bmstats
 
-def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, args)->dict:
+def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
 
     generalstatsfile = bedfiles["generalstatsfile"]
 
-    phap1 = re.compile(r'.*MAT.*')
-    phap2 = re.compile(r'.*PAT.*')
+    matpattern = benchparams['matpattern']
+    patpattern = benchparams['patpattern']
+    phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+    phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
     totalbenchcovered = 0
 
     totalrefaligned = 0
@@ -335,12 +342,14 @@ def write_aligned_cluster_stats(outputfiles:dict, bmstats:dict, args)->int:
 
     return 0
 
-def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstats:dict, args)->dict:
+def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
 
     generalstatsfile = bedfiles["generalstatsfile"]
 
-    phap1 = re.compile(r'.*MAT.*')
-    phap2 = re.compile(r'.*PAT.*')
+    matpattern = benchparams['matpattern']
+    patpattern = benchparams['patpattern']
+    phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+    phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
     totalbenchcovered = 0
 
     totalrefaligned = 0
@@ -611,7 +620,7 @@ def write_mononuc_stats(mononucstats:dict, bedfiles:dict, benchmark_stats:dict, 
 
     return 0
 
-def write_het_stats(bedfiles:dict, bmstats:dict, args):
+def write_het_stats(bedfiles:dict, bmstats:dict, benchparams, args):
 
     hetbedfile = bedfiles["coveredhetsitealleles"]
     num_switches = 0
@@ -619,8 +628,10 @@ def write_het_stats(bedfiles:dict, bmstats:dict, args):
     num_paternal = 0
     total_matching_hets = 0
 
-    pmat = re.compile(r'.*MAT.*')
-    ppat = re.compile(r'.*PAT.*')
+    matpattern = benchparams['matpattern']
+    patpattern = benchparams['patpattern']
+    pmat = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+    ppat = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
 
     last_contig = ""
     last_hap = ""
