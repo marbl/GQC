@@ -34,7 +34,7 @@ substitutionstatsfiles <- sapply(seq(1, length(assemblydirs)), function(x) {file
 indelstatsfiles <- sapply(seq(1, length(assemblydirs)), function(x) {file=paste(c(assemblydirs[x], "/", assemblyprefixes[x], ".indelerrorstats.txt"), sep="", collapse=""); return(file)})
 
 pdf("NGAx.pdf", width=7, height=7)
-assembly_ngax_plot(scaffoldsizefiles, assemblylabels=assemblylabels, ideal=TRUE, plottitle="NGAx for different assemblies", idealfile=idealfile)
+assembly_ngax_plot(scaffoldsizefiles, assemblylabels=assemblylabels, ideal=TRUE, idealname=benchname, plottitle="NGAx for different assemblies", idealfile=idealfile)
 dev.off()
 pdf("SubstitutionRates.pdf", width=7, height=7)
 assembly_substitutions_plot(substitutionstatsfiles, assemblylabels=assemblylabels, cexnames=0.8, legendlabels=assemblylabels, legendypos=150, titleval="Substitution discrepancies in assemblies")
@@ -48,7 +48,7 @@ dev.off()
 
 pdf("SummaryStatsPlots.pdf", width=10, height=10)
 par(mfrow=c(2,2))
-assembly_ngax_plot(scaffoldsizefiles, assemblylabels=assemblylabels, ideal=TRUE, plottitle="NGAx for different assemblies", idealfile=idealfile)
+assembly_ngax_plot(scaffoldsizefiles, assemblylabels=assemblylabels, ideal=TRUE, idealname=benchname, plottitle="NGAx for different assemblies", idealfile=idealfile)
 assembly_substitutions_plot(substitutionstatsfiles, assemblylabels=assemblylabels, cexnames=0.8, legendlabels=assemblylabels, legendypos=150, titleval="Substitution discrepancies in assemblies")
 assembly_indels_plot(indelstatsfiles, shortassemblylabels, titleval="Indel discrepancy rates in assemblies", cexnames=0.8, legendlabels=assemblylabels, legendypos=20.0)
 assembly_mononucqv_plot(mnstatsfiles, assemblylabels, errorbars=TRUE, pointcex=0, plotlines=TRUE, linetype=2)

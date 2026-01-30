@@ -17,6 +17,6 @@ assemblysizefiles <- sapply(lengthtypes, function(x) {file=paste(c(outputdir, "/
 # Make NGAx plot:
 plotname <- paste(c(outputdir, "/", assemblyname, ".continuitystats.", genomename, ".pdf"), sep="", collapse="")
 pdf(plotname)
-assembly_ngax_plot(assemblysizefiles, assemblylabels=c("Aligned NGAx", "Contig NGx", "Scaffold NGx"), ideal=TRUE, haplotype=NA, plottitle=paste(c("Continuity stats for ", assemblyname), sep="", col=""))
+assembly_ngax_plot(assemblysizefiles, assemblylabels=c("Aligned NGAx", "Contig NGx", "Scaffold NGx"), ideal=TRUE, idealname=genomename, haplotype=NA, plottitle=paste(c("Continuity stats for ", assemblyname), sep="", col=""))
 dev.off()
 

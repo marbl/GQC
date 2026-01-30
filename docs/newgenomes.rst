@@ -17,7 +17,7 @@ be used with GQC:
 1. matbenchmark, patbenchmark: FASTA or FASTQ formatted files
 containing all of the maternal and all of the paternal scaffolds,
 respectively. These files should also have index files created
-with "samtools index".
+with "samtools faidx".
 
 2. excluderegions: BED formatted file containing all suspect regions
 of the diploid genome benchmark. These regions will not be included

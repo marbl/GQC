@@ -47,7 +47,7 @@ addclusterlengths <- function(clusterlengths, color="blue", dashed=FALSE, ltyval
 }
 
 
-assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(), assemblylabels=c(), ideal=FALSE, haplotype=NA, plottitle="", cexval=1.0) {
+assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(), assemblylabels=c(), ideal=FALSE, idealname='HG002v1.1', haplotype=NA, plottitle="", cexval=1.0) {
   
   firstclusters <- readlengths(clusterfiles[1]) 
   totalalignedlength <- sum(firstclusters$clusterlength)
@@ -73,7 +73,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
     ideallengths <- readideallengths(idealfile)
     addclusterlengths(ideallengths, col="black")
     assemblycolors <- c(assemblycolors[1:length(assemblylabels)], "black")
-    assemblylabels <- c(assemblylabels, "Ideal (HG002v1.1)")
+    assemblylabels <- c(assemblylabels, paste0(c("Ideal (", idealname, ")"), sep="", collapse=""))
   }
   legend("topright", assemblylabels, col=assemblycolors, lty=rep(1, length(clusterfiles)))
   aunglabel=paste(c("auNGA: ", aung, "Mb"), sep="", collapse="")
@@ -93,8 +93,10 @@ readmnstatsfile <- function(filename) {
 }
 
 mononucaccuracystats <- function(mnstats) {
-  consensuserrors <- mnstats[(mnstats$assemblylength != -1) & (mnstats$type == "CONSENSUS"), ]
-  noncomplexcovered <- mnstats[mnstats$assemblylength != -1, ]
+  consensuserrors <- mnstats[(mnstats$assemblylength != -1) & (mnstats$type == "CONSENSUS") & (mnstats$reflength < 100) & (mnstats$reflength >= 10), ]
+  noncomplexcovered <- mnstats[(mnstats$assemblylength != -1) & (mnstats$reflength < 100) & (mnstats$reflength >= 10), ]
+  #length(consensuserrors$reflength)
+  #length(noncomplexcovered$reflength)
   consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts

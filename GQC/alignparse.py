@@ -104,7 +104,7 @@ def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, te
             for truthint in sorted(refcoveredbed, key=lambda h: (h.chrom, h.start, h.stop)):
                 rb.write(truthint.chrom + "\t" + str(truthint.start) + "\t" + str(truthint.end) + "\t" + truthint.name + "\n")
 
-    if hetsites and hetallelebed is not None and not os.path.exists(hetallelebed) and os.path.getsize(hetallelebed) > 0:
+    if hetsites and (hetallelebed is not None) and (not os.path.exists(hetallelebed) or (os.path.getsize(hetallelebed) == 0)):
         phasing.write_hetallele_bed(hetsitealleles, hetallelebed)
 
     if user_variantfile is not None:
