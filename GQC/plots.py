@@ -122,12 +122,12 @@ def plot_read_qv_score_concordance(readsetname:str, benchname:str, outputdir:str
         returnvalue = os.system(plotcommand)
     return returnvalue
 
-def run_ngax_plot(assemblyname:str, benchname:str, outputdir:str, nonnbenchbed:str, resourcedir:str):
+def run_ngax_plot(assemblyname:str, benchname:str, outputdir:str, benchgenomebed:str, resourcedir:str):
     rfile_res = importlib.resources.files("GQC").joinpath('NGAxPlot.R')
     rlib_res = importlib.resources.files("GQC").joinpath('AssemblyFunctions.R')
     with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
         plottitle = "Continuity Curves for " + assemblyname
-        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyname + " " + benchname + " " + outputdir + " " + nonnbenchbed + " " + plottitle
+        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyname + " " + benchname + " " + outputdir + " " + benchgenomebed + " " + plottitle
         logger.info(plotcommand)
         returnvalue = os.system(plotcommand)
     return returnvalue
@@ -141,16 +141,16 @@ def plot_assembly_discrepancy_counts(assemblyname:str, genomename:str, outputdir
         returnvalue = os.system(plotcommand)
     return returnvalue
 
-def plot_assembly_summary_stats(assemblyname:str, benchname:str, outputdir:str, nonnbenchbed:str, resourcedir:str, assemblyqv:int):
+def plot_assembly_summary_stats(assemblyname:str, benchname:str, outputdir:str, benchgenomebed:str, resourcedir:str, assemblyqv:int):
     rfile_res = importlib.resources.files("GQC").joinpath('AssemblySummaryPlots.R')
     rlib_res = importlib.resources.files("GQC").joinpath('AssemblyFunctions.R')
     with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
-        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyname + " " + benchname + " " + outputdir + " " + nonnbenchbed + " " + str(assemblyqv)
+        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyname + " " + benchname + " " + outputdir + " " + benchgenomebed + " " + str(assemblyqv)
         logger.info(plotcommand)
         returnvalue = os.system(plotcommand)
     return returnvalue
 
-def plot_assembly_comparison_plots(assemblies:list, benchname:str, nonnbenchbed:str, outputdir:str):
+def plot_assembly_comparison_plots(assemblies:list, benchname:str, benchgenomebed:str, outputdir:str):
     rfile_res = importlib.resources.files("GQC").joinpath('AssemblyMultiplot.R')
     rlib_res = importlib.resources.files("GQC").joinpath('AssemblyComparisonPlotFunctions.R')
     assemblyfile = outputdir + "/assemblyparams.txt"
@@ -163,7 +163,7 @@ def plot_assembly_comparison_plots(assemblies:list, benchname:str, nonnbenchbed:
             afh.write("\n")
 
     with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
-        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyfile + " " + benchname + " " + outputdir + " " + nonnbenchbed
+        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + assemblyfile + " " + benchname + " " + outputdir + " " + benchgenomebed
         logger.info(plotcommand)
         returnvalue = os.system(plotcommand)
     return returnvalue

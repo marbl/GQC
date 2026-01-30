@@ -4,8 +4,6 @@ library(Hmisc)
 assemblycolors <- c("#44AA99", "#332288", "#882255", "#888888", "#DDCC77", "#661100", "#6699CC")
 methodcolors <- c("#DDCC77", "#661100", "#6699CC")
 
-##### BEGIN NG/NGAx Plotting Routines #####
-
 readlengths <- function(sizefile) {
   clusterlengths <- read.table(sizefile, sep="\t", header=FALSE)
   names(clusterlengths) <- c("perc", "clusterlength", "totallength", "chromosome")
@@ -34,7 +32,7 @@ plotclusterlengths <- function(clusterlengths, color="red", title="NGAx", dashed
   if (is.na(xlabel)) {
     xlabel="Percent of Diploid Genome"
   }
-  plot(xcoords, ycoords, type="s", col=color, lty=ltyval, xlim=c(0,xmax), ylim=c(0,250), xlab=xlabel, ylab="Aligned length", main=title, cex=cexval)
+  plot(xcoords, ycoords, type="s", col=color, lty=ltyval, xlim=c(0,xmax), ylim=c(0,250), xlab=xlabel, ylab="Aligned length (Mb)", main=title, cex=cexval)
 }
 
 addclusterlengths <- function(clusterlengths, color="blue", dashed=FALSE, ltyval=NA) {
@@ -86,8 +84,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
 ##### START Homopolymer Accuracy Curve Plotting Routines #####
 
 readmnstatsfile <- function(filename) {
-  mnstats <- read.table(filename, header=FALSE, sep="\t")
-  names(mnstats) <- c("name", "base", "reflength", "assemblylength", "type")
+  mnstats <- read.table(filename, header=FALSE, sep="\t", col.names=c("name", "base", "reflength", "assemblylength", "type"))
 
   return(mnstats)
 }
@@ -205,8 +202,7 @@ assembly_mononucqv_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plotti
 ##### START Indel Errors by Size Plotting Routines #####
 
 plotindellengths <- function(indellengthfile, outputdir, xlabval="Length difference", ylabval="Indel Errors per mb", titleval="", ymax=NA) {
-  indellengthhist <- read.table(indellengthfile, sep="\t")
-  names(indellengthhist) <- c("indellength", "indelcount", "indelspermbaligned")
+  indellengthhist <- read.table(indellengthfile, sep="\t", col.names=c("indellength", "indelcount", "indelspermbaligned"))
   
   insertionrates <- sapply(seq(1, 10), function(i) {if (any(indellengthhist$indellength==i)) {indellengthhist[indellengthhist$indellength==i, "indelspermbaligned"]} else {0}})
   deletionrates <- sapply(seq(1, 10), function(i) {if (any(indellengthhist$indellength==-1*i)) {indellengthhist[indellengthhist$indellength==-1*i, "indelspermbaligned"]} else {0}})
@@ -259,9 +255,8 @@ plotpartialbarplot <- function(fn, x, y=NULL, barpositions=c(), barlabels=c()){
 
 assembly_substitutions_plot <- function(assemblysubsfiles, assemblylabels, xlabval="Assembly", ylabval="Substitutions per mb", ybreak=c(0,0), titleval="", ymax=NA, legendypos=160.0, legend=TRUE, spanmax=21, spanbreak=c(10, 13)) {
   
-  # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors, only consensus
-  firsthist <- read.table(assemblysubsfiles[1], sep="\t")
-  names(firsthist) <- c("errortype", "errorcount", "errorspermbaligned")
+  # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors (errors that match the opposite haplotype allele), only consensus
+  firsthist <- read.table(assemblysubsfiles[1], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
   typeorderindex <- sapply(firsthist$errortype, function(x) {which(typeorder==x)})
   firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
   firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
@@ -271,8 +266,7 @@ assembly_substitutions_plot <- function(assemblysubsfiles, assemblylabels, xlabv
  
   if (length(assemblysubsfiles) > 1) {
     for (i in seq(2, length(assemblysubsfiles))) {
-      subshist <- read.table(assemblysubsfiles[i], sep="\t")
-      names(subshist) <- c("errortype", "errorcount", "errorspermbaligned")
+      subshist <- read.table(assemblysubsfiles[i], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
       typeorderindex <- sapply(subshist$errortype, function(x) {which(typeorder==x)})
       
       assemblytis <- sum(subshist[titv[typeorderindex]=="ti", "errorspermbaligned"])
@@ -328,20 +322,17 @@ assembly_substitutions_plot <- function(assemblysubsfiles, assemblylabels, xlabv
 # Routines for plotting indel rates:
 
 totalindelrate <- function(indellengthfile) {
-  indellengthhist <- read.table(indellengthfile, sep="\t")
-  names(indellengthhist) <- c("indellength", "indelcount", "indelspermbaligned")
+  indellengthhist <- read.table(indellengthfile, sep="\t", col.names=c("indellength", "indelcount", "indelspermbaligned"))
   
   return(sum(indellengthhist$indelspermbaligned, na.rm=TRUE))  
 }
 totalinsertionrate <- function(indellengthfile) {
-  indellengthhist <- read.table(indellengthfile, sep="\t")
-  names(indellengthhist) <- c("indellength", "indelcount", "indelspermbaligned")
+  indellengthhist <- read.table(indellengthfile, sep="\t", col.names=c("indellength", "indelcount", "indelspermbaligned"))
   
   return(sum(indellengthhist[indellengthhist$indellength>0, "indelspermbaligned"], na.rm=TRUE))  
 }
 totaldeletionrate <- function(indellengthfile) {
-  indellengthhist <- read.table(indellengthfile, sep="\t")
-  names(indellengthhist) <- c("indellength", "indelcount", "indelspermbaligned")
+  indellengthhist <- read.table(indellengthfile, sep="\t", col.names=c("indellength", "indelcount", "indelspermbaligned"))
   
   return(sum(indellengthhist[indellengthhist$indellength<0, "indelspermbaligned"], na.rm=TRUE))  
 }
@@ -363,8 +354,7 @@ assembly_indels_plot <- function(indellengthfiles, assemblylabels, xlabval="Asse
 assembly_compound_plot <- function(assemblysubsfile, indellengthfile, assemblyname, ylabval="Indels or Substitutions per mb", titleval="", ymax=NA, assemblyqv=NA) {
   
   # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors, only consensus
-  firsthist <- read.table(assemblysubsfile, sep="\t")
-  names(firsthist) <- c("errortype", "errorcount", "errorspermbaligned")
+  firsthist <- read.table(assemblysubsfile, sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
   typeorderindex <- sapply(firsthist$errortype, function(x) {which(typeorder==x)})
   firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
   firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])

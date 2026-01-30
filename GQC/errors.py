@@ -191,7 +191,15 @@ def gather_mononuc_stats(coveredmononucbedfile:str, mononucstatsfile:str):
         mononucline = mfh.readline()
         while mononucline:
             mononucline = mononucline.rstrip()
-            [chrom, start, end, name, score, strand, widestart, wideend, color, chrom_b, start_b, end_b, variant_name, score_b, strand_b, widestart_b, wideend_b, color_b, error_type, variant_type, queryvariantname] = mononucline.split("\t")
+            mnfields = mononucline.split("\t")
+            if len(mnfields)==12:
+                [chrom, start, end, name, score, strand, widestart, wideend, color, chrom_b, start_b, end_b] = mnfields
+            elif len(mnfields)==21:
+                [chrom, start, end, name, score, strand, widestart, wideend, color, chrom_b, start_b, end_b, variant_name, score_b, strand_b, widestart_b, wideend_b, color_b, error_type, variant_type, queryvariantname] = mnfields
+            else:
+                logger.critical("Unexpected number of fields (" + str(len(mnfields)) + ") in file " + coveredmononucbedfile + " -- should be 12 or 21")
+                print("Unexpected number of fields (" + str(len(mnfields)) + ") in file " + coveredmononucbedfile + " -- should be 12 or 21")
+                exit(1)
             runlength = int(end) - int(start)
             namefields = name.split("_")
             repeatedbase = namefields[-1]
