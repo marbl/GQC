@@ -10,6 +10,9 @@ it is possible to create resource directories for other phased
 T2T genomes. Once each of these files is created and placed in
 a resource directory, the GQC bench configuration file (e.g.,
 "benchconfig.txt") can be updated with their name and location.
+Resource tarballs for `HG002v1.1 <https://www.biorxiv.org/content/10.1101/2025.09.21.677443v1>`_ 
+and `PAN027v1.2 <https://www.biorxiv.org/content/10.64898/2025.12.14.693655v1.full>`_ are 
+available on `AWS <https://human-pangenomics.s3.amazonaws.com/index.html?prefix=T2T/HG002/assemblies/benchmarking/resources/>`_.
 
 Here are the various files needed for each genome benchmark to
 be used with GQC:
