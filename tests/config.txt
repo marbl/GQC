@@ -1,0 +1,15 @@
+resourcedir: tests/resources
+mononucruns: v1.1.mnr10.bed
+dinucruns: v1.1.dnr.bed
+trinucruns: v1.1.tnr.bed
+tetranucruns: v1.1.qnr.bed
+hetsitevariants: v1.1.hetsites.bed
+excluderegions: v1.1.excluded_regions.bed
+nstretchregions: v1.1.ncoords.bed
+genomeregions: v1.1.genome.bed
+nonnseq: v1.1.non_n_seq.bed
+matmarkerdb: v1.1.matnotpat.k40.hap
+patmarkerdb: v1.1.patnotmat.k40.hap
+matbenchmark: v1.1.mat.fasta.gz
+patbenchmark: v1.1.pat.fasta.gz
+winnowmaprepkmers: v1.1.repetitive_k19.txt
