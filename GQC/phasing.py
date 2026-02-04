@@ -98,7 +98,6 @@ def write_hetallele_bed(hetsitealleles:dict, hetbed:str):
 def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarkerfile:str, outputdir:str, outputfiles:dict):
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     mathapmeroutput = "KmerMap.mat"
     pathapmeroutput = "KmerMap.pat"
     matpathapmeroutput = "KmerMap.matpat"
@@ -107,11 +106,11 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
     matoutputlocation = outputdir + "/" + mathapmeroutput + "." + assemblystub + ".kmers.merge.bed"
     patoutputlocation = outputdir + "/" + pathapmeroutput + "." + assemblystub + ".kmers.merge.bed"
     matpatoutputlocation = outputdir + "/" + matpathapmeroutput + "." + assemblystub + ".hapmers.merge.bed"
-    tmpdir = currentdir + "/" + outputdir + "/tmp"
+    tmpdir = outputdir + "/tmp"
     if not os.path.exists(outputfiles["phasemarkerbed"]):
         if False:
             matpatcommand = "WriteKmerBed -v -m -T2 -P" + tmpdir + " " + matmarkerfile + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + matpathapmeroutput
-            path = Path(currentdir + "/" + outputdir + "/tmp")
+            path = Path(outputdir + "/tmp")
             logger.info("Creating temporary directory " + outputdir + "/tmp for output")
             path.mkdir(exist_ok=True)
             print("Running: " + matpatcommand)
@@ -125,7 +124,7 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
             patcommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + pathapmeroutput
     
             for command in [matcommand, patcommand]:
-                path = Path(currentdir + "/" + outputdir + "/tmp")
+                path = Path(outputdir + "/tmp")
                 logger.info("Creating temporary directory " + outputdir + "/tmp for output")
                 path.mkdir(exist_ok=True)
                 #print("Running: " + command)
@@ -151,16 +150,15 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
 def map_benchmark_hapmers_onto_assembly_with_phaseblocks(queryfasta, matmarkerfile:str, patmarkerfile:str, outputdir:str, outputfiles:dict):
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     phaseblockoutput = "PhaseBlocks"
     assemblystub = re.sub(r'\.fa.*', "", queryfasta)
     assemblystub = re.sub(r'.*/', "", assemblystub)
     outputlocation = outputdir + "/" + phaseblockoutput + "." + assemblystub + ".hapmers.bed"
-    tmpdir = currentdir + "/" + outputdir + "/tmp"
+    tmpdir = outputdir + "/tmp"
     command = "PhaseBlocks -v -T2 -P" + tmpdir + " " + matmarkerfile + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + phaseblockoutput
     if not os.path.exists(outputlocation) and not os.path.exists(outputfiles["phasemarkerbed"]):
         #commandargs = command.split(" ")
-        path = Path(currentdir + "/" + outputdir + "/tmp")
+        path = Path(outputdir + "/tmp")
         logger.info("Creating temporary directory " + outputdir + "/tmp for output")
         path.mkdir(exist_ok=True)
         print("Running: " + command)
