@@ -27,6 +27,8 @@ git clone https://github.com/marbl/GQC
 cd GQC
 ```
 
+At this point, edit the file "GQC/benchconfig.txt" and change the resource directory specified in the first line to the full path to the resource directory you downloaded from [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/polishing/HG002/v1.1/benchmark/resources/hg002v1.1.resources.tar.gz).
+
 Create a virtual environment for the project:
 ```
 python3 -m venv venv
