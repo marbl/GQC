@@ -258,19 +258,31 @@ assembly_substitutions_plot <- function(assemblysubsfiles, assemblylabels, xlabv
   # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors (errors that match the opposite haplotype allele), only consensus
   firsthist <- read.table(assemblysubsfiles[1], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
   typeorderindex <- sapply(firsthist$errortype, function(x) {which(typeorder==x)})
-  firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
-  firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
-  tivals <- c(firsttis)
-  tvvals <- c(firsttvs)
+  if (length(firsthist$errortype) > 0) {
+      firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
+      firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+      tivals <- c(firsttis)
+      tvvals <- c(firsttvs)
+  }
+  else {
+      tivals <- c(0)
+      tvvals <- c(0)
+  }
   assemblylabelswithtitv <- sapply(assemblylabels, function(x) {label = paste(c("Ti     Tv\n", x), sep="", collapse=""); return(label)})
  
   if (length(assemblysubsfiles) > 1) {
     for (i in seq(2, length(assemblysubsfiles))) {
       subshist <- read.table(assemblysubsfiles[i], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
       typeorderindex <- sapply(subshist$errortype, function(x) {which(typeorder==x)})
-      
-      assemblytis <- sum(subshist[titv[typeorderindex]=="ti", "errorspermbaligned"])
-      assemblytvs <- sum(subshist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+
+      if (length(subshist$errortype) > 0) {
+          assemblytis <- sum(subshist[titv[typeorderindex]=="ti", "errorspermbaligned"])
+          assemblytvs <- sum(subshist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+      }
+      else {
+	  assemblytis <- 0
+          assemblytvs <- 0
+      }      
       
       tivals <- append(tivals, assemblytis)
       tvvals <- append(tvvals, assemblytvs)
@@ -356,8 +368,14 @@ assembly_compound_plot <- function(assemblysubsfile, indellengthfile, assemblyna
   # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors, only consensus
   firsthist <- read.table(assemblysubsfile, sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
   typeorderindex <- sapply(firsthist$errortype, function(x) {which(typeorder==x)})
-  firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
-  firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+  if (length(firsthist$errortype) > 0) {
+     firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
+     firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+  }
+  else {
+     firsttis <- 0
+     firsttvs <- 0
+  }
   leftvals <- c(firsttis)
   rightvals <- c(firsttvs)
   assemblylabelwithtitv <- paste(c("Ti     Tv\n", "Substitutions"), sep="", collapse="")

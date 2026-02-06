@@ -1,4 +1,3 @@
-#setwd("/Users/nhansen/HG002_diploid_benchmark/plots/readerrors")
 
 library(stringr)
 args = commandArgs(trailingOnly=TRUE)

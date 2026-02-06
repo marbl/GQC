@@ -14,8 +14,8 @@ mononucsitefile <- paste(c(outputdir, "/", genomename, ".mononucstats.txt"), sep
 mononucsites <- read.table(mononucsitefile, header=FALSE, sep="\t")
 names(mononucsites) <- c("name", "base", "reflength", "assemblylength", "type")
 
-consensuserrors <- mononucsites[(mononucsites$assemblylength != -1) & (mononucsites$type == "CONSENSUS"), ]
-noncomplexcovered <- mononucsites[mononucsites$assemblylength != -1, ]
+consensuserrors <- mononucsites[(mononucsites$assemblylength != -1) & (mononucsites$type == "CONSENSUS") & (mononucsites$reflength >= 10) & (mononucsites$reflength <= 100), ]
+noncomplexcovered <- mononucsites[mononucsites$assemblylength != -1 & (mononucsites$reflength >= 10) & (mononucsites$reflength < 100), ]
 
 mononucerrorrate <- length(consensuserrors$reflength)/length(noncomplexcovered$reflength)
 mononucerrorperc <- round(mononucerrorrate*100, 2)

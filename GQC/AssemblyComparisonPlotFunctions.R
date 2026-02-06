@@ -118,8 +118,8 @@ readmnstatsfile <- function(filename) {
 }
 
 mononucaccuracystats <- function(mnstats) {
-  consensuserrors <- mnstats[(mnstats$assemblylength != -1) & (mnstats$type == "CONSENSUS"), ]
-  noncomplexcovered <- mnstats[mnstats$assemblylength != -1, ]
+  consensuserrors <- mnstats[(mnstats$assemblylength != -1) & (mnstats$type == "CONSENSUS") & (mnstats$reflength >= 10) & (mnstats$reflength < 100), ]
+  noncomplexcovered <- mnstats[mnstats$assemblylength != -1 & (mnstats$reflength >= 10) & (mnstats$reflength < 100), ]
   consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
@@ -259,24 +259,33 @@ plotpartialbarplot <- function(fn, x, y=NULL, barpositions=c(), barlabels=c()){
 assembly_substitutions_plot <- function(assemblysubsfiles, assemblylabels, cexnames=1.0, xlabval="Assembly", ylabval="Substitutions per mb", titleval="", ymax=NA, legendxpos=5, legendypos=160.0, legendlabels=c(), legend=TRUE) {
   
   # note that the GQC "singlenucerrorstats.txt" output file does *not* include phasing errors (errors that match the opposite haplotype allele), only consensus
-  firsthist <- read.table(assemblysubsfiles[1], sep="\t")
-  names(firsthist) <- c("errortype", "errorcount", "errorspermbaligned")
+  firsthist <- read.table(assemblysubsfiles[1], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
   typeorderindex <- sapply(firsthist$errortype, function(x) {which(typeorder==x)})
-  firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
-  firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+  if (length(firsthist$errortype)>0) {
+    firsttis <- sum(firsthist[titv[typeorderindex]=="ti", "errorspermbaligned"])
+    firsttvs <- sum(firsthist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+  }
+  else {
+    firsttis <- 0
+    firsttvs <- 0
+  }
   tivals <- c(firsttis)
   tvvals <- c(firsttvs)
   assemblylabelswithtitv <- sapply(assemblylabels, function(x) {label = paste(c("Ti     Tv\n", x), sep="", collapse=""); return(label)})
  
   if (length(assemblysubsfiles) > 1) {
     for (i in seq(2, length(assemblysubsfiles))) {
-      subshist <- read.table(assemblysubsfiles[i], sep="\t")
-      names(subshist) <- c("errortype", "errorcount", "errorspermbaligned")
+      subshist <- read.table(assemblysubsfiles[i], sep="\t", col.names=c("errortype", "errorcount", "errorspermbaligned"))
       typeorderindex <- sapply(subshist$errortype, function(x) {which(typeorder==x)})
-      
-      assemblytis <- sum(subshist[titv[typeorderindex]=="ti", "errorspermbaligned"])
-      assemblytvs <- sum(subshist[titv[typeorderindex]=="tv", "errorspermbaligned"])
-      
+     
+      if (length(subshist$errortype)>0) {
+        assemblytis <- sum(subshist[titv[typeorderindex]=="ti", "errorspermbaligned"])
+        assemblytvs <- sum(subshist[titv[typeorderindex]=="tv", "errorspermbaligned"])
+      } 
+      else {
+        assemblytis <- 0
+        assemblytvs <- 0
+      }
       tivals <- append(tivals, assemblytis)
       tvvals <- append(tvvals, assemblytvs)
     }
