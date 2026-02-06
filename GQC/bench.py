@@ -51,8 +51,8 @@ def check_for_R():
 
 def check_for_fastk():
     if shutil.which("FastK") is None or shutil.which("KmerMap") is None:
-        print("You don\'t seem to have FastK with the KmerMap command in your path. These are necessary so scaffold phase blocks can be assessed")
-        logger.critical("You don\'t seem to have FastK with the KmerMap command in your path. These are necessary so scaffold phase blocks can be assessed")
+        print("You don\'t seem to have FastK with the KmerMap command in your path. KmerMap is included in the v1.2 release of FASTK. These are necessary so scaffold phase blocks can be assessed")
+        logger.critical("You don\'t seem to have FastK with the KmerMap command in your path. KmerMap is included in the v1.2 release of FASTK. These are necessary so scaffold phase blocks can be assessed")
         exit(1)
     return 0
 
@@ -167,10 +167,6 @@ def main() -> None:
 
     # dictionary of parameters from the benchmark configuration file:
     benchparams = read_config_data(args)
-    if "matbenchmark" in benchparams.keys():
-        print(benchparams["matbenchmark"])
-    else:
-        print("matbenchmark is not in config parameters")
 
     # pysam objects for the benchmark and test assembly fasta files:
     ref = Path(args.reffasta)

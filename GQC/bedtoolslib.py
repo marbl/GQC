@@ -42,12 +42,15 @@ def mergemultiplebedfiles(bedfilelist:list, sort=True, postmerge=False):
     if len(bedfilelist) < 2:
         logger.critical("Cannot call mergemultiplebedfiles on less than two bed files!")
         exit(1)
-    if len(bedfilelist) > 2:
-        logger.critical("Theres a bug in GQC bedtoolslib.py so it cant yet merge multiple excluded regions bed files!")
-        exit(1)
+    #if len(bedfilelist) > 2:
+        #logger.critical("Theres a bug in GQC bedtoolslib.py so it cant yet merge multiple excluded regions bed files!")
+        #exit(1)
 
-    firstbedtool = pybedtools.bedtool.BedTool(bedfilelist[0])
-    allbedtools = firstbedtool.cat(bedfilelist[1])
+    #firstbedtool = pybedtools.bedtool.BedTool(bedfilelist[0])
+    #allbedtools = firstbedtool.cat(bedfilelist[1])
+    allbedtools = pybedtools.bedtool.BedTool(bedfilelist[0])
+    for i in range(len(bedfilelist) - 1):
+        allbedtools = allbedtools.cat(bedfilelist[i+1])
 
     if sort:
         return allbedtools.sort()

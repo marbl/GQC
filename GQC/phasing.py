@@ -96,8 +96,8 @@ def write_hetallele_bed(hetsitealleles:dict, hetbed:str):
                 hfh.write(contig + "\t" + str(hetsite['start']) + "\t" + str(hetsite['end']) + "\t" + hetsite['name'] + "\t" + hetsite['allele'] + "\t" + hetsite['ref'] + "\t" + str(hetsite['refstart']) + "\t" + str(hetsite['refend']) + "\t" + assemblycontig + "\t" + str(assemblystart) + "\t" + str(assemblyend) + "\t" + allelehap + "\n")
 
 def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarkerfile:str, outputdir:str, outputfiles:dict):
-    env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
+    #env = os.environ.copy()
+    #env['LD_LIBRARY_PATH'] = os.getcwd()
     mathapmeroutput = "KmerMap.mat"
     pathapmeroutput = "KmerMap.pat"
     matpathapmeroutput = "KmerMap.matpat"
@@ -108,33 +108,28 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
     matpatoutputlocation = outputdir + "/" + matpathapmeroutput + "." + assemblystub + ".hapmers.merge.bed"
     tmpdir = outputdir + "/tmp"
     if not os.path.exists(outputfiles["phasemarkerbed"]):
-        if False:
-            matpatcommand = "WriteKmerBed -v -m -T2 -P" + tmpdir + " " + matmarkerfile + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + matpathapmeroutput
+        # map maternal/paternal kmers onto the query fasta:
+        #matpatoutputlocation = kmers.map_kmer_markers_onto_fasta(queryfasta:str, markerdbs:list, outputdir:str)
+        matcommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + matmarkerfile + " " + queryfasta + " " + outputdir + "/" + mathapmeroutput
+        patcommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + pathapmeroutput
+   
+        for command in [matcommand, patcommand]:
             path = Path(outputdir + "/tmp")
             logger.info("Creating temporary directory " + outputdir + "/tmp for output")
             path.mkdir(exist_ok=True)
-            print("Running: " + matpatcommand)
-            logger.info("Running: " + matpatcommand)
-            proc = subprocess.Popen(matpatcommand, shell=True, env=env)
-            proc.wait()
-        else:
-            # map maternal/paternal kmers onto the query fasta:
-            #matpatoutputlocation = kmers.map_kmer_markers_onto_fasta(queryfasta:str, markerdbs:list, outputdir:str)
-            matcommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + matmarkerfile + " " + queryfasta + " " + outputdir + "/" + mathapmeroutput
-            patcommand = "KmerMap -v -m -T2 -P" + tmpdir + " " + patmarkerfile + " " + queryfasta + " " + outputdir + "/" + pathapmeroutput
-    
-            for command in [matcommand, patcommand]:
-                path = Path(outputdir + "/tmp")
-                logger.info("Creating temporary directory " + outputdir + "/tmp for output")
-                path.mkdir(exist_ok=True)
-                #print("Running: " + command)
-                logger.info("Running: " + command)
-                proc = subprocess.Popen(command, shell=True, env=env)
-                proc.wait()
-    
-            logger.debug("Merging output files into " + matpatoutputlocation)
-            mergecommand = "cat " + matoutputlocation + " " + patoutputlocation + " > " + matpatoutputlocation
-            os.system(mergecommand)
+            #print("Running: " + command)
+            ##logger.info("Running: " + command)
+            ##proc = subprocess.Popen(command, shell=True, env=env)
+            ##proc.wait()
+            commandwords = command.split(" ")
+            result = subprocess.run(commandwords, capture_output=True, text=True, check=True)
+            if result.returncode != 0:
+                logger.critical("Command " + command + " had non-zero return code!")
+                exit(1)
+  
+        logger.debug("Merging output files into " + matpatoutputlocation)
+        mergecommand = "cat " + matoutputlocation + " " + patoutputlocation + " > " + matpatoutputlocation
+        os.system(mergecommand)
     
         logger.debug("Sorting output file " + matpatoutputlocation)
         sortcommand = "sort -k1,1n -k2,2n -k3,3n " + matpatoutputlocation + " > " + outputfiles["phasemarkerbed"]

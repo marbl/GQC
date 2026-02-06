@@ -33,8 +33,8 @@ def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
     if args.excludefile is not None:
         allexcludedbedfiles.append(args.excludefile)
     if args.includefile is not None:
-        write_nonincluded_file(refobj, args.includefile, outputfiles["nonincludedbed"])
-        allexcludedbedfiles.append(outputfiles["nonincludedfile"])
+        write_nonincluded_file(refobj, args.includefile, outputfiles["nonincludedbed"], bedobjects)
+        allexcludedbedfiles.append(outputfiles["nonincludedbed"])
     if "excluderegions" in benchparams.keys():
         configexcluderegions = benchparams["excluderegions"]
         configexcludepath = Path(configexcluderegions)
@@ -101,12 +101,12 @@ def write_whole_genome_bedfile(fastaobj, args, outputfiles, bedobjects, regionsk
 
     return 0
 
-def write_nonincluded_file(refobj, includedbed, nonincludedbed):
+def write_nonincluded_file(refobj, includedbed, nonincludedbed, bedobjects):
 
     genomebedstring = ""
     for refentry in refobj.references:
         reflength = refobj.get_reference_length(refentry)
-        genomebedstring = genomebedstring + refentry + "\t0\t" + reflength + "\n"
+        genomebedstring = genomebedstring + refentry + "\t0\t" + str(reflength) + "\n"
 
     bedobjects["benchgenomeregions"] = pybedtools.BedTool(genomebedstring, from_string = True)
     bedobjects["includedregions"] = pybedtools.BedTool(includedbed)
