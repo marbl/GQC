@@ -177,7 +177,7 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
 
     return bmstats
 
-def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
+def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedincludedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
 
     generalstatsfile = bedfiles["generalstatsfile"]
 
@@ -186,6 +186,7 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedte
     phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
     phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
     totalbenchcovered = 0
+    totalincludedbenchcovered = 0
 
     totalrefaligned = 0
     numberrefaligns = 0
@@ -241,6 +242,13 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedte
         if phap2.match(chrom):
             patbenchcovered = patbenchcovered + end - start
 
+    for truthint in mergedincludedtruthcoveredbed:
+        [chrom, start, end, name] = truthint
+        chrom = truthint.chrom
+        start = int(truthint.start)
+        end = int(truthint.stop)
+        totalincludedbenchcovered = totalincludedbenchcovered + end - start
+
     longesttestalignment = 0
     totaltestmatcovered = 0
     totaltestpatcovered = 0
@@ -259,6 +267,7 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedte
     bmstats["testmattotalcovered"] = totaltestmatcovered
     bmstats["testpattotalcovered"] = totaltestpatcovered
     bmstats["benchtotalcovered"] = totalbenchcovered
+    bmstats["includedbenchtotalcovered"] = totalincludedbenchcovered
     if hap1totalbases > 0:
         bmstats["mataunga"] = hap1_aunga
     if hap2totalbases > 0:
@@ -463,7 +472,6 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
             altallelelength = len(altallele) # these lengths are wrong when allele is "*"--should replace
 
             totalerrors = totalerrors + 1
-            #if refallele == "*" or altallele == "*" or refallelelength != altallelelength:
             if vartype == 'INDEL':
                 totalindelerrors = totalindelerrors + 1
             else:
@@ -483,7 +491,7 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
 
             errorline = vfh.readline()
 
-    totalassemblybasesinaligns = benchmark_stats["testmattotalcovered"] + benchmark_stats["testpattotalcovered"]
+    totalassemblybasesinaligns = benchmark_stats["includedbenchtotalcovered"]
     if totalassemblybasesinaligns > 0:
         phaseerrorrate = totalphasingerrors / totalassemblybasesinaligns
         phasesnverrorrate = totalphasingsnverrors / totalassemblybasesinaligns
@@ -563,7 +571,15 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
                     alignedbases = alignedscorecounts[i]
                     snverrorbases = snverrorscorecounts[i]
                     indelerrorbases = indelerrorscorecounts[i]
-                    qfh.write(str(i) + "\t" + str(snverrorbases) + "\t" + str(indelerrorbases) + "\t" + str(alignedbases) + "\n")
+                    if alignedbases > 0:
+                        consensuserrorrate = (snverrorbases + indelerrorbases)/alignedbases
+                        if consensuserrorrate > 0:
+                            binqvscore = str(int(-10 * math.log(consensuserrorrate, 10) + 0.5))
+                        else:
+                            binqvscore = "Inf"
+                    else:
+                        binqvscore = "NA"
+                    qfh.write(str(i) + "\t" + str(snverrorbases) + "\t" + str(indelerrorbases) + "\t" + str(alignedbases) + "\t" + binqvscore + "\n")
 
 
     generalstatsfile = bedfiles["generalstatsfile"]

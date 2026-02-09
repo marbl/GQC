@@ -205,22 +205,13 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
     matchns = re.compile(".*[nN].*")
     numops = len(alignops)
 
-    if query=="h2tg000004l":
-        manualdebug = True
-    else:
-        manualdebug = False
-    if manualdebug:
-        print("Query has length " + str(queryalignlength) + " ref has length " + str(refalignlength))
-
-    logger.debug("Traversing alignment with " + str(numops) + " cigar ops aligning " + ref + " to " + query)
+    #logger.debug("Traversing alignment with " + str(numops) + " cigar ops aligning " + ref + " to " + query)
     while refcurrentoffset <= refend-refstart and alignopindex < len(alignops): # traverse the alignment operator by operator
         alignop = alignops[alignopindex]
         op = alignop[0]
         oplength = alignop[1]
 
         if op in [0, 7, 8]: # MX= find SNV and MNVs
-            if manualdebug:
-                print("Pos " + ref + ":" + str(refcurrentoffset + refstart - 1) + " op M " + str(op) + " has length " + str(oplength))
             for blockoffset in range(oplength):
                 refpos = refcurrentoffset + blockoffset # this is distance from left-most base of the alignment
                 querypos = querycurrentoffset + blockoffset # this is distance from left-most base of the alignment
@@ -251,8 +242,6 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                 query_positions.append(querypos)
 
         if op in [2, 3]: # deletions
-            if manualdebug:
-                print("Pos " + ref + ":" + str(refcurrentoffset + refstart - 1) + " op D " + str(op) + " has length " + str(oplength))
             refpos = refcurrentoffset-1;
             for deloffset in range(oplength):
                 query_positions.append(querycurrentoffset)
@@ -321,8 +310,6 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                 #logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " was excluded")
 
         if op == 1: # insertion
-            if manualdebug:
-                print("Pos " + ref + ":" + str(refcurrentoffset + refstart - 1) + " op I " + str(op) + " has length " + str(oplength))
             refpos = refcurrentoffset-1;
             refallele = "*"
             queryallele = queryseq[querycurrentoffset:querycurrentoffset+oplength] # one-based querystart+querycurrentoffset to querystart+querycurrentoffset+oplength-1 if forward strand, queryend-querycurrentoffset to queryend-querycurrentoffset-oplength+1 if reverse

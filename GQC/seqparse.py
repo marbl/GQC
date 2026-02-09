@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 def write_genome_bedfiles(queryobj, refobj, args, benchparams, outputfiles, bedobjects):
 
-    write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects)
     write_whole_genome_bedfile(queryobj, args, outputfiles, bedobjects, "testgenomeregions", "testgenomebed")
     write_whole_genome_bedfile(refobj, args, outputfiles, bedobjects, "benchgenomeregions", "benchgenomebed")
+    write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects)
     # did the command-line arguments specify a pre-existing bedfile of N-stretch locations?
     if hasattr(args, 'n_bedfile'):
         user_n_file = args.n_bedfile
@@ -57,6 +57,9 @@ def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
         logger.info("Merging " + str(allexcludedbedfiles) + " to create a combined excluded regions file")
         bedobjects["allexcludedregions"] = bedtoolslib.mergemultiplebedfiles(allexcludedbedfiles)
     bedobjects["allexcludedregions"].saveas(outputfiles["allexcludedbed"])
+    # now subtract the set of all excluded regions from the genome to obtain all regions included:
+    bedobjects["allincludedregions"] = bedobjects["benchgenomeregions"].subtract(bedobjects["allexcludedregions"])
+    bedobjects["allincludedregions"].saveas(outputfiles["includednonexcludedbed"])
 
     return 0
 

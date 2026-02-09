@@ -16,6 +16,7 @@ def name_output_files(args, outputdir:str)->dict:
     files = {}
     files["nonincludedbed"] = outputdir + "/nonincludedregions." + args.benchmark + ".bed"
     files["allexcludedbed"] = outputdir + "/excludedregions." + args.benchmark + ".bed"
+    files["includednonexcludedbed"] = outputdir + "/includednonexcludedregions." + args.benchmark + ".bed"
     files["alignplotdir"] = outputdir + "/alignmentplots"
     files["alignplotprefix"] = outputdir + "/alignmentplots/" + args.assembly + ".clustered_aligns"
     files["testgenomebed"] = outputdir + "/genome." + args.assembly + ".bed"
@@ -39,6 +40,7 @@ def name_output_files(args, outputdir:str)->dict:
     files["matalignedregions"] = outputdir + "/" + args.benchmark + ".mat.covered." + args.assembly + ".bed"
     files["patalignedregions"] = outputdir + "/" + args.benchmark + ".pat.covered." + args.assembly + ".bed"
     files["truthcovered"] = outputdir + "/" + args.assembly + ".benchcovered." + args.benchmark + ".bed"
+    files["includedtruthcovered"] = outputdir + "/" + args.assembly + ".includedbenchcovered." + args.benchmark + ".bed"
     files["testmatcovered"] = outputdir + "/testmatcovered." + args.assembly + ".bed"
     files["testpatcovered"] = outputdir + "/testpatcovered." + args.assembly + ".bed"
     files["generalstatsfile"] = outputdir + "/" + args.assembly + ".generalstats.txt"
@@ -50,6 +52,7 @@ def name_output_files(args, outputdir:str)->dict:
     files["structvariantsvcf"] = outputdir + "/" + args.assembly + ".svs.vcf"
     files["clusterlengths"] = outputdir + "/" + args.assembly + ".alignclusterlengths.txt"
     files["coveredmononucsfile"] = outputdir + "/" + args.assembly + ".coveredmononucs." + args.benchmark + ".bed"
+    files["coveredincludedmononucsfile"] = outputdir + "/" + args.assembly + ".coveredincludedmononucs." + args.benchmark + ".bed"
     files["mononucswithvariantsfile"] = outputdir + "/" + args.assembly + ".mononucswithvariants." + args.benchmark + ".bed"
     files["bencherrortypebed"] = outputdir + "/" + args.assembly + ".errortype." + args.benchmark + ".bed"
     files["benchexcludederrortypebed"] = outputdir + "/" + args.assembly + ".excludederrors." + args.benchmark + ".bed"

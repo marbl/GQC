@@ -182,17 +182,17 @@ def main() -> None:
     # dictionary of this run's output file names:
     outputfiles = output.name_output_files(args, outputdir)
 
-    logger.info("Step 1 (of 11): Writing bed files for excluded regions, test assembly and benchmark scaffold spans, lengths, N stretches, and contigs (ignoring stretches of less than " + str(args.minns) + " Ns)")
+    logger.info("Step 1 (of 12): Writing bed files for excluded regions, test assembly and benchmark scaffold spans, lengths, N stretches, and contigs (ignoring stretches of less than " + str(args.minns) + " Ns)")
     bedregiondict = {}
     # merged excluded regions are saved as BedTool object "allexcludedregions" in bedregiondict here
     seqparse.write_genome_bedfiles(queryobj, refobj, args, benchparams, outputfiles, bedregiondict)
    
 
     # find general stats about contig/scaffold lengths, N/L50's, etc.:
-    logger.info("Step 2 (of 11): Writing general statistics about " + args.assembly + " assembly")
+    logger.info("Step 2 (of 12): Writing general statistics about " + args.assembly + " assembly")
     benchmark_stats = stats.write_general_assembly_stats(refobj, queryobj, bedregiondict["testnonnregions"], bedregiondict["testnregions"], outputfiles, benchparams, args)
 
-    logger.info("Step 3 (of 11): Phasing assembly regions using benchmark's haplotype-specific kmers")
+    logger.info("Step 3 (of 12): Phasing assembly regions using benchmark's haplotype-specific kmers")
     if (not os.path.exists(outputfiles["phaseblockbed"])) or (os.path.getsize(outputfiles["phaseblockbed"]) == 0):
         if args.merquryblocks:
             markerbed = outputfiles["phasemarkerbed"]
@@ -227,7 +227,7 @@ def main() -> None:
     #stats.write_phase_block_stats(phaseblockints, outputfiles, benchmark_stats, args)
 
     # align test assembly separately to maternal and paternal haplotypes:
-    logger.info("Step 4 (of 11): Aligning assembly separately to maternal and paternal haplotypes of the benchmark and gathering trimmed alignments of phased assembly regions to their corresponding haplotypes")
+    logger.info("Step 4 (of 12): Aligning assembly separately to maternal and paternal haplotypes of the benchmark and gathering trimmed alignments of phased assembly regions to their corresponding haplotypes")
 
     trimmedphasedbam = outputfiles["trimmedphasedalignprefix"] + ".merge.sort.bam"
     if not os.path.exists(trimmedphasedbam):
@@ -259,9 +259,9 @@ def main() -> None:
         # now merge the maternal and paternal trimmed files to a single file with a diploid header, sort, and index:
         alignparse.merge_trimmed_bamfiles(mattrimmedbamfile, pattrimmedbamfile, benchdiploidheaderstring, outputfiles)
     else: 
-        logger.info("Skipping step 4 (of 11): Trimmed phased alignments already exist in " + trimmedphasedbam)
+        logger.info("Skipping step 4 (of 12): Trimmed phased alignments already exist in " + trimmedphasedbam)
 
-    logger.info("Step 5 (of 11): Filtering alignment to include primary best increasing subset")
+    logger.info("Step 5 (of 12): Filtering alignment to include primary best increasing subset")
     if not args.nosplit:
         logger.info("Splitting alignments at indels greater than or equal to " + str(args.splitdistance) + " bases")
         splitbam_name = trimmedphasedbam.replace(".bam", ".split.bam")
@@ -282,14 +282,17 @@ def main() -> None:
         rlis_aligndata = mummermethods.filter_aligns(aligndata, "target")
 
     ## find clusters of consistent, covering alignments and calculate continuity statistics:
-    logger.info("Step 5 (of 11): Assessing overall structural alignment of assembly")
+    logger.info("Step 6 (of 12): Assessing overall structural alignment of assembly")
     # (by default, rlis_aligndata are split alignments filtered for RLIS)
-    alignparse.assess_overall_structure(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
-    structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, benchmark_stats, args)
-    stats.write_aligned_cluster_stats(outputfiles, benchmark_stats, args)
+    if not os.path.exists(outputfiles["clusterlengths"]) or not os.path.exists(outputfiles["alignplotdir"]):
+        alignparse.assess_overall_structure(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
+        structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, benchmark_stats, args)
+        stats.write_aligned_cluster_stats(outputfiles, benchmark_stats, args)
+    else:
+        logger.info("Skipping overall structural assessment because " + outputfiles["clusterlengths"] + " and directory " + outputfiles["alignplotdir"] + " already exist")
 
     if not args.structureonly:
-       logger.info("Step 6 (of 11): Writing bed files of regions covered by alignments of " + args.assembly + " to " + args.benchmark)
+       logger.info("Step 7 (of 12): Writing bed files of regions covered by alignments of " + args.assembly + " to " + args.benchmark + " (includes phasing of assembly at benchmark heterozygous sites)")
        ## read in locations of het variants in the benchmark store in dictionary by chrom of position-sorted arrays:
        hetsites = phasing.read_hetsites(benchparams["hetsitevariants"])
        hetarrays = phasing.sort_chrom_hetsite_arrays(hetsites)
@@ -297,32 +300,39 @@ def main() -> None:
        pafaligns = None
        [refcoveredbed, querycoveredbed, variants, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts] = alignparse.write_bedfiles(alignobj, pafaligns, refobj, queryobj, hetarrays, outputfiles["testmatcovered"], outputfiles["testpatcovered"], outputfiles["truthcovered"], outputfiles["coveredhetsitealleles"], bedregiondict["allexcludedregions"], benchparams, args)
 
+       ## create non-excluded covered file:
+       bedtoolslib.intersectbed(outputfiles["truthcovered"], outputfiles["includednonexcludedbed"], outputfile=outputfiles["includedtruthcovered"])
+
        ## create merged unique outputfiles:
        [mergedtruthcoveredbed, outputfiles["mergedtruthcovered"]] = bedtoolslib.mergebed(outputfiles["truthcovered"])
+       [mergedincludedtruthcoveredbed, outputfiles["mergedincludedtruthcovered"]] = bedtoolslib.mergebed(outputfiles["includedtruthcovered"])
        [mergedtestmatcoveredbed, outputfiles["mergedtestmatcovered"]] = bedtoolslib.mergebed(outputfiles["testmatcovered"])
        [mergedtestpatcoveredbed, outputfiles["mergedtestpatcovered"]] = bedtoolslib.mergebed(outputfiles["testpatcovered"])
 
-       logger.info("Step 7 (of 11): Writing primary alignment statistics about " + args.assembly + " assembly")
-       stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, benchparams, args)
+       logger.info("Step 8 (of 12): Writing primary alignment statistics about " + args.assembly + " assembly")
+       stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedincludedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, benchparams, args)
 
        if alignobj is not None:
            ## classify variant errors as phasing or novel errors:
-           logger.info("Step 8 (of 11): Writing phase switch statistics to generalstats.txt file")
+           logger.info("Step 9 (of 12): Writing phase switch statistics to generalstats.txt file")
            stats.write_het_stats(outputfiles, benchmark_stats, benchparams, args)
-           logger.info("Step 9 (of 11): Determining whether errors are switched haplotype or novel")
+           logger.info("Step 10 (of 12): Determining whether errors are switched haplotype or novel")
            errors.classify_errors(refobj, queryobj, variants, hetsites, outputfiles, benchparams, benchmark_stats, args)
            stats.write_qv_stats(benchmark_stats, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, outputfiles, args)
 #
            ## evaluate mononucleotide runs:
-           logger.info("Step 10 (of 11): Assessing accuracy of mononucleotide runs")
+           logger.info("Step 11 (of 12): Assessing accuracy of mononucleotide runs")
            bedtoolslib.intersectbed(benchparams["mononucruns"], outputfiles["mergedtruthcovered"], outputfile=outputfiles["coveredmononucsfile"], writefirst=True)
-           mononucswithvariantsbedfile = bedtoolslib.intersectbed(outputfiles["coveredmononucsfile"], outputfiles["bencherrortypebed"], outputfiles["mononucswithvariantsfile"], outerjoin=True, writeboth=True)
+           bedtoolslib.intersectbed(outputfiles["coveredmononucsfile"], outputfiles["allexcludedbed"], outputfile=outputfiles["coveredincludedmononucsfile"], writefirst=True, v=True)
+           mononucswithvariantsbedfile = bedtoolslib.intersectbed(outputfiles["coveredincludedmononucsfile"], outputfiles["bencherrortypebed"], outputfiles["mononucswithvariantsfile"], outerjoin=True, writeboth=True)
            mononucstats = errors.gather_mononuc_stats(outputfiles["mononucswithvariantsfile"], outputfiles["mononucstatsfile"])
            stats.write_mononuc_stats(mononucstats, outputfiles, benchmark_stats, args)
+    else:
+        logger.info("Skipping steps 7 through 11 (of 12) since --structureonly option was used")
 
     # plot alignment coverage across assembly and genome:
     if not no_rscript:
-        logger.info("Step 11 (of 11): Creating plots")
+        logger.info("Step 12 (of 12): Creating plots")
         if not args.structureonly:
             plots.plot_benchmark_align_coverage(args.assembly, args.benchmark, outputdir, outputfiles["benchgenomebed"], outputfiles["benchnbed"], benchparams["matpattern"])
             plots.plot_testassembly_align_coverage(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
@@ -331,11 +341,11 @@ def main() -> None:
                 plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
                 if len(alignedscorecounts) > 0:
                     plots.plot_qv_score_concordance(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
-        plots.plot_svcluster_align_plots(args.assembly, args.benchmark, outputfiles["alignplotdir"], refobj, mode='bench')
+            plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+            plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
+            plots.plot_assembly_discrepancy_counts(args.assembly, args.benchmark,  outputdir)
+            plots.plot_svcluster_align_plots(args.assembly, args.benchmark, outputfiles["alignplotdir"], refobj, mode='bench')
         plots.run_ngax_plot(args.assembly, args.benchmark, outputdir, outputfiles["benchgenomebed"], benchparams["resourcedir"])
-        plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
-        plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
-        plots.plot_assembly_discrepancy_counts(args.assembly, args.benchmark,  outputdir)
         if "assemblyqv" in benchmark_stats.keys():
             assemblyqv = benchmark_stats["assemblyqv"]
         else:
