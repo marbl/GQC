@@ -152,7 +152,7 @@ def plot_assembly_summary_stats(assemblyname:str, benchname:str, outputdir:str, 
 
 def plot_assembly_comparison_plots(assemblies:list, benchname:str, benchgenomebed:str, outputdir:str):
     rfile_res = importlib.resources.files("GQC").joinpath('AssemblyMultiplot.R')
-    rlib_res = importlib.resources.files("GQC").joinpath('AssemblyComparisonPlotFunctions.R')
+    rlib_res = importlib.resources.files("GQC").joinpath('AssemblyFunctions.R')
     assemblyfile = outputdir + "/assemblyparams.txt"
 
     with open(assemblyfile, "w") as afh:

@@ -45,7 +45,7 @@ addclusterlengths <- function(clusterlengths, color="blue", dashed=FALSE, ltyval
 }
 
 
-assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(), assemblylabels=c(), ideal=FALSE, idealname='HG002v1.1', haplotype=NA, plottitle="", cexval=1.0) {
+assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(), assemblylabels=c(), ideal=FALSE, idealname='HG002v1.1', idealfile="", aung=TRUE, haplotype=NA, plottitle="", cexval=1.0) {
   
   firstclusters <- readlengths(clusterfiles[1]) 
   totalalignedlength <- sum(firstclusters$clusterlength)
@@ -67,16 +67,17 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
       addclusterlengths(readlengths(clusterfiles[i]), col=assemblycolors[i], lty=1)
     }
   }
-  if (ideal) {
+  if (ideal and idealfile != "") {
     ideallengths <- readideallengths(idealfile)
     addclusterlengths(ideallengths, col="black")
     assemblycolors <- c(assemblycolors[1:length(assemblylabels)], "black")
     assemblylabels <- c(assemblylabels, paste0(c("Ideal (", idealname, ")"), sep="", collapse=""))
   }
-  legend("topright", assemblylabels, col=assemblycolors, lty=rep(1, length(clusterfiles)))
-  aunglabel=paste(c("auNGA: ", aung, "Mb"), sep="", collapse="")
-  text(20, 50, labels=aunglabel)
-  
+  legend("topright", assemblylabels, col=assemblycolors, bty="n", lty=rep(1, length(clusterfiles)))
+  if (aung) {
+    aunglabel=paste(c("auNGA: ", aung, "Mb"), sep="", collapse="")
+    text(20, 50, labels=aunglabel)
+  }
 }
 
 ##### END NG/NGAx Plotting Routines #####
@@ -92,8 +93,6 @@ readmnstatsfile <- function(filename) {
 mononucaccuracystats <- function(mnstats) {
   consensuserrors <- mnstats[(mnstats$assemblylength != -1) & (mnstats$type == "CONSENSUS") & (mnstats$reflength < 100) & (mnstats$reflength >= 10), ]
   noncomplexcovered <- mnstats[(mnstats$assemblylength != -1) & (mnstats$reflength < 100) & (mnstats$reflength >= 10), ]
-  #length(consensuserrors$reflength)
-  #length(noncomplexcovered$reflength)
   consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
   accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
@@ -102,7 +101,7 @@ mononucaccuracystats <- function(mnstats) {
   return(data.frame(lengths=consensuserrorcounts$mids, errors=consensuserrorcounts$counts, correctcalls=correctcalls, totals=noncomplexcovcounts$counts, accuracy=accrate) )
 }
 
-assembly_mononucacc_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plottitle="", pointcex=1.0, errorbars=FALSE) {
+assembly_mononucacc_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plottitle="", pointcex=1.0, errorbars=FALSE, legendxpos=15, legendypos=0.6) {
   pchvalues <- c(15, 16, 17, 18, 15, 16, 17, 18, 15, 16, 17, 18)
   multiplevector <- c(1.4, 1.4, 1.4, 1.9, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.9)
   ptexp <- pointcex*multiplevector
@@ -139,7 +138,7 @@ assembly_mononucacc_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plott
     }
   }
 
-  legend(15, 0.6, assemblylabels, col=assemblycolors, pch=pchvalues, pt.cex=ptexp)
+  legend(legendxpos, legendypos, assemblylabels, bty="n", col=assemblycolors, pch=pchvalues, pt.cex=ptexp)
 }
 
 assembly_mononucqv_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plottitle="", plotlines=FALSE, linetype=1, errorbars=FALSE, pointcex=1.0, overallerrorrate=NA) {
@@ -194,6 +193,13 @@ assembly_mononucqv_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plotti
   }
   if (!is.na(overallerrorrate)) {
     text(30, maxqv-1, labels= paste(c("Overall error rate: ", overallerrorrate, "%"), sep="", collapse=""))
+  }
+
+  if (plotlines) {
+    legend("topright", assemblylabels, bty="n", col=assemblycolors, lty=linetype)
+  }
+  else {
+    legend("topright", assemblylabels, bty="n", col=assemblycolors, pch=pchvalues, pt.cex=pointcex*multiplevector)
   }
 }
 
@@ -403,3 +409,101 @@ assembly_compound_plot <- function(assemblysubsfile, indellengthfile, assemblyna
       text(2, (leftvals[1]+leftvals[2])/2, qvlabel)
   }
 }
+
+assembly_switchrate_plot <- function(assemblynames, assemblylabels, switchfile=phaseswitchfile, plottitle="Phase switch errors per megabase") {
+  switchrates <- read.table(switchfile, sep="\t", header=FALSE)
+  names(switchrates) <- c("Assembly", "SwitchRate")
+
+  # bottom, left, top, right  
+  defaultmargin <- c(5.1, 4.1, 4.1, 2.1)
+  par(mar = c(5.1, 9.1, 4.1, 4.1))
+  #par(mar = c(5.1, 10.1, 4.1, 4.1))
+  options(scipen=8)
+
+  assemblyswitchrates <- sapply(assemblynames, function(x) {switchrates[switchrates$Assembly==x, "SwitchRate"]})
+
+  out <- barplot(rev(log10(as.numeric(assemblyswitchrates))), names.arg=rev(assemblylabels), las=1, horiz=TRUE, xaxt='n', col=rev(assemblycolors[1:length(assemblynames)]), xlab=c("Errors per megabase"), main=plottitle)
+  xval <- c(1, 10, 100, 1000)
+  xpos <- log10(xval)
+  axis(1, xpos, xval, las=1)
+  formattedrates <- as.integer(assemblyswitchrates*10+0.5)/10
+  text(log10(rev(assemblyswitchrates)), out, rev(formattedrates), pos=4, xpd=NA)
+  par(mar=defaultmargin)
+
+}
+
+# Routines for plotting sideways barplot of switch rates
+
+assembly_missingness_plot <- function(assemblynames, assemblylabels, missingnessfile=missingfile, plottitle="Uncovered HG002v1.1 bases") {
+  missingbases <- read.table(missingfile, sep="\t", header=FALSE)
+  names(missingbases) <- c("Assembly", "MissingBases")
+
+  # bottom, left, top, right  
+  defaultmargin <- c(5.1, 4.1, 4.1, 2.1)
+  par(mar = c(5.1, 9.1, 4.1, 4.1))
+  #par(mar = c(5.1, 10.1, 4.1, 4.1))
+  options(scipen=8)
+
+  assemblymissingrates <- sapply(assemblynames, function(x) {missingbases[missingbases$Assembly==x, "MissingBases"]})
+  assemblymissingrates <- assemblymissingrates/1000000
+
+  out <- barplot(rev(log10(as.numeric(assemblymissingrates))), names.arg=rev(assemblylabels), las=1, horiz=TRUE, xaxt='n', col=rev(assemblycolors[1:length(assemblynames)]), xlab=c("Missing bases (Mb)"), main=plottitle)
+  xval <- c(1, 10, 100, 1000)
+  xpos <- log10(xval)
+  axis(1, xpos, xval, las=1)
+  formattedrates <- as.integer(assemblymissingrates*10+0.5)/10
+  text(log10(rev(assemblymissingrates)), out, rev(formattedrates), pos=4, xpd=NA)
+  par(mar=defaultmargin)
+
+  return(assemblymissingrates)
+}
+
+# Routines for plotting quality values:
+
+assembly_qv_plot <-function(assembly_stats_file, yak_stats_file, merq_stats_file, assemblynames, assemblylabels, titleval="Assembly QV by different methods", noyak=TRUE) {
+
+  assembly_qv_stats <- read.table(assembly_stats_file, sep="\t", header=FALSE)
+  names(assembly_qv_stats) <- c("Assembly", "QV")
+
+  if (!(noyak)) {
+    yak_qv_stats <- read.table(yak_stats_file, sep="\t", header=FALSE)
+    names(yak_qv_stats) <- c("Assembly", "ErrorCount", "AssemblyCount", "QV", "Unused", "AssemblyFile")
+  }
+
+  merq_qv_stats <- read.table(merq_stats_file, sep="\t", header=FALSE)
+  names(merq_qv_stats) <- c("Assembly", "ErrorCount", "AssemblyCount", "QV", "Unused")
+
+  qvs_to_map <- data.frame("assembly"=assemblynames)
+  qvs_to_map$assemblyqv <- sapply(assemblynames, function(x) {assembly_qv_stats[assembly_qv_stats$Assembly==x, "QV"]})
+  if (!(noyak)) {
+    qvs_to_map$yakqv <- sapply(assemblynames, function(x) {yak_qv_stats[yak_qv_stats$Assembly==x, "QV"]})
+  }
+  qvs_to_map$merqqv <- sapply(assemblynames, function(x) {merq_qv_stats[merq_qv_stats$Assembly==x, "QV"]})
+  benchmarkmerq <- merq_qv_stats[merq_qv_stats$Assembly=="hg002v1.1", "QV"]
+
+  #return(qvs_to_map)
+  if (!(noyak)) {
+    minqv <- min(rbind(qvs_to_map$assemblyqv, qvs_to_map$yakqv, qvs_to_map$merqqv), na.rm=TRUE)
+    maxqv <- max(rbind(qvs_to_map$assemblyqv, qvs_to_map$yakqv, qvs_to_map$merqqv), na.rm=TRUE)
+    if (maxqv<benchmarkmerq) {
+      maxqv <- benchmarkmerq + 10
+    }
+    barplot(t(cbind(qvs_to_map$yakqv, qvs_to_map$merqqv, qvs_to_map$assemblyqv)), beside=TRUE, names.arg=assemblylabels, cex.names=0.7, col=qvmethodcolors, xlab="Assembly", ylim=c(0, maxqv+20), main=titleval)
+    abline(h=benchmarkmerq, lty=3)
+    text(5, benchmarkmerq, "HG002v1.1 Merqury", pos=2)
+    legend("topright", c("Yak", "Merqury", "GQC Benchmark"), col=qvmethodcolors, pch=15)
+  } else {
+    barplotmethodcolors <- qvmethodcolors[2:3]
+    minqv <- min(rbind(qvs_to_map$assemblyqv, qvs_to_map$merqqv), na.rm=TRUE)
+    maxqv <- max(rbind(qvs_to_map$assemblyqv, qvs_to_map$merqqv), na.rm=TRUE)
+    if (maxqv<benchmarkmerq) {
+      maxqv <- benchmarkmerq + 10
+    }
+    barplot(t(cbind(qvs_to_map$yakqv, qvs_to_map$merqqv, qvs_to_map$assemblyqv)), beside=TRUE, names.arg=assemblylabels, cex.names=0.7, col=barplotmethodcolors, xlab="Assembly", ylim=c(0, maxqv+20), main=titleval)
+    abline(h=benchmarkmerq, lty=3)
+    text(5, benchmarkmerq, "HG002v1.1 Merqury", pos=2)
+    legend("topright", c("Merqury", "GQC Benchmark"), bty="n", col=barplotmethodcolors, pch=15)
+  }
+}
+
+
