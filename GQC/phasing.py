@@ -115,12 +115,10 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
    
         for command in [matcommand, patcommand]:
             path = Path(outputdir + "/tmp")
-            logger.info("Creating temporary directory " + outputdir + "/tmp for output")
+            #logger.info("Creating temporary directory " + outputdir + "/tmp for output")
             path.mkdir(exist_ok=True)
             #print("Running: " + command)
-            ##logger.info("Running: " + command)
-            ##proc = subprocess.Popen(command, shell=True, env=env)
-            ##proc.wait()
+            logger.info("Running: " + command)
             commandwords = command.split(" ")
             result = subprocess.run(commandwords, capture_output=True, text=True, check=True)
             if result.returncode != 0:

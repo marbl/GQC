@@ -324,7 +324,7 @@ def main() -> None:
            logger.info("Step 11 (of 12): Assessing accuracy of mononucleotide runs")
            bedtoolslib.intersectbed(benchparams["mononucruns"], outputfiles["mergedtruthcovered"], outputfile=outputfiles["coveredmononucsfile"], writefirst=True)
            bedtoolslib.intersectbed(outputfiles["coveredmononucsfile"], outputfiles["allexcludedbed"], outputfile=outputfiles["coveredincludedmononucsfile"], writefirst=True, v=True)
-           mononucswithvariantsbedfile = bedtoolslib.intersectbed(outputfiles["coveredincludedmononucsfile"], outputfiles["bencherrortypebed"], outputfiles["mononucswithvariantsfile"], outerjoin=True, writeboth=True)
+           [mononucswithvariantsbed, mononucswithvariantsbedfile] = bedtoolslib.intersectbed(outputfiles["coveredincludedmononucsfile"], outputfiles["bencherrortypebed"], outputfiles["mononucswithvariantsfile"], outerjoin=True, writeboth=True)
            mononucstats = errors.gather_mononuc_stats(outputfiles["mononucswithvariantsfile"], outputfiles["mononucstatsfile"])
            stats.write_mononuc_stats(mononucstats, outputfiles, benchmark_stats, args)
     else:
@@ -341,7 +341,10 @@ def main() -> None:
                 plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
                 if len(alignedscorecounts) > 0:
                     plots.plot_qv_score_concordance(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
-            plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+            if os.path.getsize(mononucswithvariantsbedfile) > 0:
+                plots.plot_mononuc_accuracy(args.assembly, args.benchmark, outputdir, benchparams["resourcedir"])
+            else:
+                logger.info("No mononucleotide runs assessed--skipping plot")
             plots.plot_assembly_error_stats(args.assembly, args.benchmark, outputdir)
             plots.plot_assembly_discrepancy_counts(args.assembly, args.benchmark,  outputdir)
             plots.plot_svcluster_align_plots(args.assembly, args.benchmark, outputfiles["alignplotdir"], refobj, mode='bench')

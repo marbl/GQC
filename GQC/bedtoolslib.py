@@ -10,7 +10,7 @@ def mergebed(bedfile:str, collapsecolumns='4', collapseoutput='collapse', collap
 
     mergedbed = bedfile.replace(".bed", ".merged.bed")
 
-    if not skipifexists or not os.path.exists(mergedbed):
+    if not skipifexists or not os.path.exists(mergedbed) or os.path.getsize(mergedbed) == 0:
         logger.debug("Merging " + bedfile + " to create " + mergedbed)
 
         unmergedints = pybedtools.bedtool.BedTool(bedfile)
@@ -80,7 +80,8 @@ def intersectbed(bedfile1:str, bedfile2:str, outputfile:str, writefirst=False, w
     if requirewhole:
         command = command + " -f 1.0"
     os.system(command + " > " + outputfile)
-    intersectbed = pybedtools.bedtool.BedTool(outputfile)
+    intersectbed = pybedtools.bedtool.BedTool(outputfile).sort()
+    intersectbed.saveas(outputfile)
 
     return [intersectbed, outputfile]
 

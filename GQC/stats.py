@@ -177,7 +177,7 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
 
     return bmstats
 
-def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedincludedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
+def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, includedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
 
     generalstatsfile = bedfiles["generalstatsfile"]
 
@@ -242,7 +242,7 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedin
         if phap2.match(chrom):
             patbenchcovered = patbenchcovered + end - start
 
-    for truthint in mergedincludedtruthcoveredbed:
+    for truthint in includedtruthcoveredbed:
         [chrom, start, end, name] = truthint
         chrom = truthint.chrom
         start = int(truthint.start)
@@ -561,6 +561,7 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
         gsfh.write("Total indel errors in alignments of " + args.assembly + " to " + args.benchmark + ": " + str(totalindelerrors) + "\n")
         gsfh.write("Errors where sequence matches the opposite haplotype: " + str(totalphasingerrors) + " (" + str(totalphasingsnverrors) + " subs. and " + str(totalphasingindelerrors) + " indels)" + "\n")
         gsfh.write("Errors where sequence doesn\'t match the opposite haplotype: " + str(totalconsensuserrors) + " (" + str(totalconsensussnverrors) + " subs. and " + str(totalconsensusindelerrors) + " indels)" + "\n")
+        gsfh.write("Number of included, non-excluded benchmark bases with primary-aligned assembly scaffold sequence: " + str(totalassemblybasesinaligns) + "\n")
         gsfh.write("Overall QV without wrong-haplotype errors: " + str(consensusqv) + "\n")
         gsfh.write("Overall QV including wrong-haplotype errors: " + str(qvwithphaseerrors) + "\n")
 
