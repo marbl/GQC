@@ -67,7 +67,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
       addclusterlengths(readlengths(clusterfiles[i]), col=assemblycolors[i], lty=1)
     }
   }
-  if (ideal and idealfile != "") {
+  if (ideal && idealfile != "") {
     ideallengths <- readideallengths(idealfile)
     addclusterlengths(ideallengths, col="black")
     assemblycolors <- c(assemblycolors[1:length(assemblylabels)], "black")

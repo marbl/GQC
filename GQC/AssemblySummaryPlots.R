@@ -17,28 +17,28 @@ lengthtypes <- c("alignclusterlengths", "contiglengths", "scaffoldlengths")
 assemblysizefiles <- sapply(lengthtypes, function(x) {file=paste(c(outputdir, "/", assemblyname, ".", x, ".txt"), sep="", collapse=""); return(file)})
 
 mononucsitefile <- paste(c(outputdir, "/", assemblyname, ".mononucstats.txt"), sep="", collapse="")
-mononucsites <- read.table(mononucsitefile, header=FALSE, sep="\t")
-names(mononucsites) <- c("name", "base", "reflength", "assemblylength", "type")
+mononucsites <- read.table(mononucsitefile, header=FALSE, sep="\t", col.names=c("name", "base", "reflength", "assemblylength", "type"))
 
 consensuserrors <- mononucsites[(mononucsites$assemblylength != -1) & (mononucsites$type == "CONSENSUS") & (mononucsites$reflength < 100) & (mononucsites$reflength >= 10), ]
 noncomplexcovered <- mononucsites[(mononucsites$assemblylength != -1) & (mononucsites$reflength < 100) & (mononucsites$reflength >= 10), ]
 
-mononucerrorrate <- length(consensuserrors$reflength)/length(noncomplexcovered$reflength)
-mononucerrorperc <- round(mononucerrorrate*100, 2)
-
-# Calculate error rate as consensus error counts divided by covered counts that aren't complex:
-
-consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
-noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
-
-accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
-
-#text(20, 20, labels= paste(c("Overall error rate: ", mononucerrorperc, "%"), sep="", collapse=""))
 # Make summary plot:
 pdf(plotname, 11.0, 11.0)
 par(mfrow=c(2,2))
 assembly_ngax_plot(assemblysizefiles, assemblylabels=c("Aligned NGAx", "Contig NGx", "Scaffold NGx"), ideal=TRUE, idealname=genomename, haplotype=NA, plottitle=paste(c("Continuity stats for ", assemblyname), sep="", collapse=""))
-assembly_mononucqv_plot(c(mononucsitefile), assemblylabels=c(genomename), plottitle="", plotlines=TRUE, linetype=1, errorbars=TRUE, overallerrorrate=mononucerrorperc)
+
+if (length(noncomplexcovered$name) > 0) {
+    mononucerrorrate <- length(consensuserrors$reflength)/length(noncomplexcovered$reflength)
+    mononucerrorperc <- round(mononucerrorrate*100, 2)
+
+    # Calculate error rate as consensus error counts divided by covered counts that aren't complex:
+    
+    consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
+    noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
+    
+    accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
+    assembly_mononucqv_plot(c(mononucsitefile), assemblylabels=c(genomename), plottitle="", plotlines=TRUE, linetype=1, errorbars=TRUE, overallerrorrate=mononucerrorperc)
+}
 assembly_compound_plot(subsfile, indelfile, readsetname, titleval=paste(c(assemblyname, " Discrepancy Counts"), sep="", collapse=""), assemblyqv=assemblyqv)
 plotindellengths(indelfile, outputdir, titleval=paste(c("Indel rate by length for ", assemblyname), sep="", collapse=""))
 dev.off()

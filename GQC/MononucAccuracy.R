@@ -11,24 +11,27 @@ resourcedir <- ifelse(! ( is.na(args[4])), args[4], ".")
 plottitle <- ifelse(!( is.na(args[5])), args[5], paste(c(genomename, " accuracy of mononucleotide runs"), sep="", collapse=""))
 
 mononucsitefile <- paste(c(outputdir, "/", genomename, ".mononucstats.txt"), sep="", collapse="")
-mononucsites <- read.table(mononucsitefile, header=FALSE, sep="\t")
-names(mononucsites) <- c("name", "base", "reflength", "assemblylength", "type")
+mononucsites <- read.table(mononucsitefile, header=FALSE, sep="\t", col.names=c("name", "base", "reflength", "assemblylength", "type"))
 
 consensuserrors <- mononucsites[(mononucsites$assemblylength != -1) & (mononucsites$type == "CONSENSUS") & (mononucsites$reflength >= 10) & (mononucsites$reflength <= 100), ]
 noncomplexcovered <- mononucsites[mononucsites$assemblylength != -1 & (mononucsites$reflength >= 10) & (mononucsites$reflength < 100), ]
 
-mononucerrorrate <- length(consensuserrors$reflength)/length(noncomplexcovered$reflength)
-mononucerrorperc <- round(mononucerrorrate*100, 2)
+if (length(noncomplexcovered$name) > 0) {
+    mononucerrorrate <- length(consensuserrors$reflength)/length(noncomplexcovered$reflength)
+    mononucerrorperc <- round(mononucerrorrate*100, 2)
 
-consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
-noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
+    # Calculate error rate as consensus error counts divided by covered counts that aren't complex:
+    
+    consensuserrorcounts <- hist(consensuserrors$reflength, plot=FALSE, breaks=seq(10, 100, 1))
+    noncomplexcovcounts <- hist(noncomplexcovered$reflength, plot=FALSE, breaks=seq(10, 100, 1))
+    
+    accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
+    assembly_mononucqv_plot(c(mononucsitefile), assemblylabels=c(genomename), plottitle="", plotlines=TRUE, linetype=1, errorbars=TRUE, overallerrorrate=mononucerrorperc)
+    plotname <- paste(c(outputdir, "/", genomename, ".mononuc_accuracy.", benchname, ".pdf"), sep="", collapse="")
+    pdf(plotname, 7.08661, 6.69291)
+    assembly_mononucqv_plot(c(mononucsitefile), assemblylabels=c(genomename), plottitle="", plotlines=TRUE, linetype=1, errorbars=TRUE, overallerrorrate=mononucerrorperc)
+    #text(20, 20, labels= paste(c("Overall error rate: ", mononucerrorperc, "%"), sep="", collapse=""))
+    dev.off()
+}
 
-accrate <- 1.0 - consensuserrorcounts$counts/noncomplexcovcounts$counts
-
-plotname <- paste(c(outputdir, "/", genomename, ".mononuc_accuracy.", benchname, ".pdf"), sep="", collapse="")
-pdf(plotname, 7.08661, 6.69291)
-assembly_mononucqv_plot(c(mononucsitefile), assemblylabels=c(genomename), plottitle="", plotlines=TRUE, linetype=1, errorbars=TRUE, overallerrorrate=mononucerrorperc)
-#text(20, 20, labels= paste(c("Overall error rate: ", mononucerrorperc, "%"), sep="", collapse=""))
-
-dev.off()
 
