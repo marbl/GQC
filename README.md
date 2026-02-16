@@ -21,7 +21,12 @@ All other dependencies will be installed by the pip installer with the commands 
 
 ## Local Installation
 
-Until GQC becomes available on PyPi and bioconda, the easiest way to use it is to install it locally. First clone this github repository:
+GQC is available on PyPi and can be installed with pip:
+```
+pip install GQC
+```
+
+Another easy way to install GQC is locally. This allows you to run the most up-to-date version of the code. First clone this github repository:
 ```
 git clone https://github.com/marbl/GQC
 cd GQC
