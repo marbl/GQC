@@ -85,7 +85,7 @@ def wfmash_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.getcwd()
     currentdir = os.getcwd()
-    command = "wfmash -t" + str(args.t) + " -Y \'#\' --sam-format " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wfmdefparams.sort.bam > " + prefix + ".wfmdefparams.out 2>&1"
+    command = "wfmash -t" + str(args.t) + " -Y \'#\' --sam " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wfmdefparams.sort.bam > " + prefix + ".wfmdefparams.out 2>&1"
     print("Running " + command)
     logger.debug("Running " + command)
     proc = subprocess.Popen(command, shell=True, env=env)
