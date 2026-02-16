@@ -316,6 +316,7 @@ def main() -> None:
            ## classify variant errors as phasing or novel errors:
            logger.info("Step 9 (of 12): Writing phase switch statistics to generalstats.txt file")
            stats.write_het_stats(outputfiles, benchmark_stats, benchparams, args)
+           stats.write_hmm_phaseswitch_stats(outputfiles, benchmark_stats, args)
            logger.info("Step 10 (of 12): Determining whether errors are switched haplotype or novel")
            errors.classify_errors(refobj, queryobj, variants, hetsites, outputfiles, benchparams, benchmark_stats, args)
            stats.write_qv_stats(benchmark_stats, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, outputfiles, args)

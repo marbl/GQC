@@ -46,13 +46,10 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
         cumscaffbases = 0
         numscaffs = 0
         scaffold_n50 = 0
-        scaffold_hap1_ng50 = 0
-        scaffold_hap2_ng50 = 0
+        scaffold_ng50 = 0
         scaffold_l50 = 0
-        scaffold_hap1_lg50 = 0
-        scaffold_hap2_lg50 = 0
-        scaffold_hap1_aung = 0
-        scaffold_hap2_aung = 0
+        scaffold_lg50 = 0
+        scaffold_aung = 0
         scaffold_lengths = queryobj.lengths
 
         scaffold_lengths.sort(reverse=True)
@@ -63,16 +60,11 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
                 if cumscaffbases > 0.5*totalscaffoldbases and scaffold_n50 == 0:
                     scaffold_n50 = scafflength
                     scaffold_l50 = numscaffs
-                if cumscaffbases > 0.5*hap1totalbases and scaffold_hap1_ng50 == 0:
-                    scaffold_hap1_ng50 = scafflength
-                    scaffold_hap1_lg50 = numscaffs
-                if cumscaffbases > 0.5*hap2totalbases and scaffold_hap2_ng50 == 0:
-                    scaffold_hap2_ng50 = scafflength
-                    scaffold_hap2_lg50 = numscaffs
-                if hap1totalbases > 0:
-                    scaffold_hap1_aung = scaffold_hap1_aung + scafflength*scafflength/hap1totalbases
-                if hap2totalbases:
-                    scaffold_hap2_aung = scaffold_hap2_aung + scafflength*scafflength/hap2totalbases
+                if cumscaffbases > 0.5*diploidtotalbases and scaffold_ng50 == 0:
+                    scaffold_ng50 = scafflength
+                    scaffold_lg50 = numscaffs
+                if diploidtotalbases > 0:
+                    scaffold_aung = scaffold_aung + scafflength*scafflength/diploidtotalbases
                 perctotallength = int(1000.0*cumscaffbases/diploidtotalbases + 0.5)/10.0
                 # At some point, may want to pull scaffold name into last field for use in annotating plots
                 sfh.write(str(perctotallength) + "\t" + str(scafflength) + "\t" + str(cumscaffbases) + "\tNA\n")
@@ -84,13 +76,10 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
 
         numcontigs = len(contigregions)
         contig_n50 = 0
-        contig_hap1_ng50 = 0
-        contig_hap2_ng50 = 0
+        contig_ng50 = 0
         contig_l50 = 0
-        contig_hap1_lg50 = 0
-        contig_hap2_lg50 = 0
-        contig_hap1_aung = 0
-        contig_hap2_aung = 0
+        contig_lg50 = 0
+        contig_aung = 0
         numlargecontigs = 0
         sizelist = []
         totalsize = 0
@@ -111,16 +100,11 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
                 if cumcontigbases > 0.5*totalsize and contig_n50 == 0:
                     contig_n50 = contigsize
                     contig_l50 = numcontigs
-                if cumcontigbases > 0.5*hap1totalbases and contig_hap1_ng50 == 0:
-                    contig_hap1_ng50 = contigsize
-                    contig_hap1_lg50 = numcontigs
-                if cumcontigbases > 0.5*hap2totalbases and contig_hap2_ng50 == 0:
-                    contig_hap2_ng50 = contigsize
-                    contig_hap2_lg50 = numcontigs
-                if hap1totalbases > 0:
-                    contig_hap1_aung = contig_hap1_aung + contigsize*contigsize/hap1totalbases
-                if hap2totalbases > 0:
-                    contig_hap2_aung = contig_hap2_aung + contigsize*contigsize/hap2totalbases
+                if cumcontigbases > 0.5*diploidtotalbases and contig_ng50 == 0:
+                    contig_ng50 = contigsize
+                    contig_lg50 = numcontigs
+                if diploidtotalbases > 0:
+                    contig_aung = contig_aung + contigsize*contigsize/diploidtotalbases
                 perctotallength = int(1000.0*cumcontigbases/diploidtotalbases + 0.5)/10.0
                 cfh.write(str(perctotallength) + "\t" + str(contigsize) + "\t" + str(cumcontigbases) + "\tNA\n")
         
@@ -129,25 +113,19 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
         bmstats['numscaffolds'] = numscaffolds
         bmstats['totalscaffoldbases'] = totalscaffoldbases
         bmstats['scaffoldn50'] = scaffold_n50
-        bmstats['scaffoldhap1ng50'] = scaffold_hap1_ng50
-        bmstats['scaffoldhap2ng50'] = scaffold_hap2_ng50
+        bmstats['scaffoldng50'] = scaffold_ng50
         bmstats['scaffoldl50'] = scaffold_l50
-        bmstats['scaffoldhap1lg50'] = scaffold_hap1_lg50
-        bmstats['scaffoldhap2lg50'] = scaffold_hap2_lg50
-        bmstats['scaffoldhap1aung'] = scaffold_hap1_aung
-        bmstats['scaffoldhap2aung'] = scaffold_hap2_aung
+        bmstats['scaffoldlg50'] = scaffold_lg50
+        bmstats['scaffoldaung'] = scaffold_aung
 
         bmstats['numcontigs'] = numcontigs
         bmstats['numlargecontigs'] = numcontigs
         bmstats['totallargecontigbases'] = totalsize
         bmstats['contign50'] = contig_n50
-        bmstats['contighap1ng50'] = contig_hap1_ng50
-        bmstats['contighap2ng50'] = contig_hap2_ng50
+        bmstats['contigng50'] = contig_ng50
         bmstats['contigl50'] = contig_l50
-        bmstats['contighap1lg50'] = contig_hap1_lg50
-        bmstats['contighap2lg50'] = contig_hap2_lg50
-        bmstats['contighap1aung'] = contig_hap1_aung
-        bmstats['contighap2aung'] = contig_hap2_aung
+        bmstats['contiglg50'] = contig_lg50
+        bmstats['contigaung'] = contig_aung
 
         gsfh.write("Scaffolds:\n\n")
         gsfh.write("Number of scaffolds: " + str(numscaffolds) + "\n")
@@ -155,24 +133,24 @@ def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, ou
         gsfh.write("Ns per kb in scaffolds: " + str(int(totalns*1000/totalscaffoldbases)) + "\n")
         gsfh.write("Scaffold N50: " + str(round(scaffold_n50/1000000, 3)) + "Mb\n")
         gsfh.write("Scaffold NG50: ")
-        gsfh.write(str(round(scaffold_hap2_ng50/1000000, 3)) + "Mb (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(round(scaffold_ng50/1000000, 3)) + "Mb\n")
         gsfh.write("Scaffold L50: " + str(scaffold_l50) + "\n")
         gsfh.write("Scaffold LG50: ")
-        gsfh.write(str(scaffold_hap2_lg50) + " (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(scaffold_lg50) + "\n")
         gsfh.write("Scaffold auNG: ")
-        gsfh.write(str(round(scaffold_hap2_aung/1000000, 3)) + "Mb (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(round(scaffold_aung/1000000, 3)) + "Mb\n")
         gsfh.write("\nContigs:\n\n")
         gsfh.write("Number of contigs: " + str(numcontigs) + "\n")
         gsfh.write("Number of contigs >= " + str(mincontiglength) + ": " + str(numlargecontigs) + "\n")
         gsfh.write("Total bases in contigs >= " + str(mincontiglength) + ": " + str(totalsize) + "\n")
         gsfh.write("Contig N50: " + str(round(contig_n50/1000000, 3)) + "Mb\n")
         gsfh.write("Contig NG50: ")
-        gsfh.write(str(round(contig_hap2_ng50/1000000, 3)) + "Mb (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(round(contig_ng50/1000000, 3)) + "Mb\n")
         gsfh.write("Contig L50: " + str(contig_l50) + "\n")
         gsfh.write("Contig LG50: ")
-        gsfh.write(str(contig_hap2_lg50) + " (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(contig_lg50) + "\n")
         gsfh.write("Contig auNG: ")
-        gsfh.write(str(round(contig_hap2_aung/1000000, 3)) + "Mb (calculated with respect to the length of the paternal haplotype)\n")
+        gsfh.write(str(round(contig_aung/1000000, 3)) + "Mb\n")
         gsfh.write("\n")
 
     return bmstats
@@ -191,43 +169,28 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
     totalrefaligned = 0
     numberrefaligns = 0
 
-    hap1totalbases = bmstats['hap1totalbases'] # total MATERNAL bases in benchmark
-    hap2totalbases = bmstats['hap2totalbases'] # total PATERNAL bases in benchmark
+    totalbases = bmstats['diploidtotalbases'] # total bases in benchmark
 
-    if hap1totalbases > 0:
-        hap1_nga50 = 0
-        hap1_lga50 = 0
-        hap1_nga90 = 0
-        hap1_lga90 = 0
-        hap1_aunga = 0
-    if hap2totalbases > 0:
-        hap2_nga50 = 0
-        hap2_lga50 = 0
-        hap2_nga90 = 0
-        hap2_lga90 = 0
-        hap2_aunga = 0
+    if totalbases > 0:
+        nga50 = 0
+        lga50 = 0
+        nga90 = 0
+        lga90 = 0
+        aunga = 0
 
     for truthint in sorted(mergedtruthcoveredbed, key=lambda h: len(h), reverse=True):
         alignlength = len(truthint)
         totalrefaligned = totalrefaligned + alignlength
         numberrefaligns = numberrefaligns + 1
 
-        if hap1totalbases > 0:
-            if totalrefaligned >= 0.5*hap1totalbases and hap1_nga50 == 0:
-                hap1_nga50 = alignlength
-                hap1_lga50 = numberrefaligns
-            if totalrefaligned >= 0.9*hap1totalbases and hap1_nga90 == 0:
-                hap1_nga90 = alignlength
-                hap1_lga90 = numberrefaligns
-            hap1_aunga = hap1_aunga + alignlength*alignlength/hap1totalbases
-        if hap2totalbases > 0:
-            if totalrefaligned >= 0.5*hap2totalbases and hap2_nga50 == 0:
-                hap2_nga50 = alignlength
-                hap2_lga50 = numberrefaligns
-            if totalrefaligned >= 0.9*hap2totalbases and hap2_nga90 == 0:
-                hap2_nga90 = alignlength
-                hap2_lga90 = numberrefaligns
-            hap2_aunga = hap2_aunga + alignlength*alignlength/hap2totalbases
+        if totalbases > 0:
+            if totalrefaligned >= 0.5*totalbases and nga50 == 0:
+                nga50 = alignlength
+                lga50 = numberrefaligns
+            if totalrefaligned >= 0.9*totalbases and nga90 == 0:
+                nga90 = alignlength
+                lga90 = numberrefaligns
+            aunga = aunga + alignlength*alignlength/totalbases
 
     matbenchcovered = 0
     patbenchcovered = 0
@@ -268,25 +231,15 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
     bmstats["testpattotalcovered"] = totaltestpatcovered
     bmstats["benchtotalcovered"] = totalbenchcovered
     bmstats["includedbenchtotalcovered"] = totalincludedbenchcovered
-    if hap1totalbases > 0:
-        bmstats["mataunga"] = hap1_aunga
-    if hap2totalbases > 0:
-        bmstats["pataunga"] = hap2_aunga
 
     with open(generalstatsfile, "a") as gsfh:
-        gsfh.write("\nAligned contig bases:\n\n")
-        if hap1totalbases > 0:
-            gsfh.write("NGA50 (for MATERNAL benchmark haplotype): " + str(round(hap1_nga50/1000000, 3)) + "Mb\n")
-            gsfh.write("LGA50 (for MATERNAL benchmark haplotype): " + str(hap1_lga50) + "\n")
-            gsfh.write("NGA90 (for MATERNAL benchmark haplotype): " + str(round(hap1_nga90/1000000, 3)) + "Mb\n")
-            gsfh.write("LGA90 (for MATERNAL benchmark haplotype): " + str(hap1_lga90) + "\n")
-            gsfh.write("auNGA (for MATERNAL benchmark haplotype): " + str(round(hap1_aunga/1000000, 3)) + "Mb\n")
-        if hap2totalbases > 0:
-            gsfh.write("NGA50 (for PATERNAL benchmark haplotype): " + str(round(hap2_nga50/1000000, 3)) + "Mb\n")
-            gsfh.write("LGA50 (for PATERNAL benchmark haplotype): " + str(hap2_lga50) + "\n")
-            gsfh.write("NGA90 (for PATERNAL benchmark haplotype): " + str(round(hap2_nga90/1000000, 3)) + "Mb\n")
-            gsfh.write("LGA90 (for PATERNAL benchmark haplotype): " + str(hap2_lga90) + "\n")
-            gsfh.write("auNGA (for PATERNAL benchmark haplotype): " + str(round(hap2_aunga/1000000, 3)) + "Mb\n")
+        gsfh.write("Aligned contig bases:\n\n")
+        if totalbases > 0:
+            gsfh.write("NGA50: " + str(round(nga50/1000000, 3)) + "Mb\n")
+            gsfh.write("LGA50: " + str(lga50) + "\n")
+            gsfh.write("NGA90: " + str(round(nga90/1000000, 3)) + "Mb\n")
+            gsfh.write("LGA90: " + str(lga90) + "\n")
+            gsfh.write("auNGA: " + str(round(aunga/1000000, 3)) + "Mb\n")
         perctestmatcovered = int(totaltestmatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
         perctestpatcovered = int(totaltestpatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
         if bmstats['hap1totalbases'] > 0 or bmstats['hap2totalbases'] > 0:
@@ -307,6 +260,15 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
         gsfh.write("Total " + args.benchmark + " covered: " + str(totalbenchcovered) + "/" + str(bmstats['totalbases']) + " (" + str(percbenchcovered) + "% of all MAT and PAT bases in benchmark)" + "\n" )
         gsfh.write("MAT " + args.benchmark + " covered: " + str(matbenchcovered) + "/" + str(bmstats['hap1totalbases']) + " (" + str(percmatbenchcovered) + "% of MAT bases in benchmark)" + "\n")
         gsfh.write("PAT " + args.benchmark + " covered: " + str(patbenchcovered) + "/" + str(bmstats['hap2totalbases']) + " (" + str(percpatbenchcovered) + "% of PAT bases in benchmark)" + "\n")
+
+        if "ngc50" in bmstats.keys():
+            maxclusterdistance = args.maxclusterdistance
+            gsfh.write("\nAlignment cluster length stats (alignments are clustered to combine collinear alignments with ref and query shifts less than " + str(maxclusterdistance) + " bases:\n\n")
+            gsfh.write("NGC50: " + str(round(bmstats['ngc50']/1000000, 3)) + "Mb\n")
+            gsfh.write("LGC50: " + str(bmstats['lgc50']) + "\n")
+            gsfh.write("NGC90: " + str(round(bmstats['ngc90']/1000000, 3)) + "Mb\n")
+            gsfh.write("LGC90: " + str(bmstats['lgc90']) + "\n")
+            gsfh.write("auNGC: " + str(round(bmstats['aungc']/1000000, 3)) + "Mb\n")
 
     return bmstats
 
@@ -349,6 +311,33 @@ def write_aligned_cluster_stats(outputfiles:dict, bmstats:dict, args)->int:
             logger.debug(str(spanlength) + "\t" + str(totallength) + "\t" + refentry)
             cfh.write(str(perctotallength) + "\t" + str(spanlength) + "\t" + str(totallength) + "\t" + refentry + "\n")
 
+    if totallength > 0:
+        ngc50 = 0
+        lgc50 = 0
+        ngc90 = 0
+        lgc90 = 0
+        aungc = 0
+        numberclusters = 0
+        totalclusterbases = 0
+
+        for cluster in allclusters:
+            spanlength = cluster["spanlength"]
+            numberclusters = numberclusters + 1
+            totalclusterbases = totalclusterbases + spanlength
+
+            if totalclusterbases >= 0.5*totallength and ngc50 == 0:
+                ngc50 = spanlength
+                lgc50 = numberclusters
+            if totalclusterbases >= 0.9*totallength and ngc90 == 0:
+                ngc90 = spanlength
+                lgc90 = numberclusters
+            aungc = aungc + spanlength*spanlength/totallength
+        bmstats['ngc50'] = ngc50
+        bmstats['lgc50'] = lgc50
+        bmstats['ngc90'] = ngc90
+        bmstats['lgc90'] = lgc90
+        bmstats['aungc'] = aungc
+
     return 0
 
 def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstats:dict, benchparams, args)->dict:
@@ -364,25 +353,22 @@ def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstat
     totalrefaligned = 0
     numberrefaligns = 0
 
-    hap1totalbases = bmstats['hap1totalbases'] # total MATERNAL bases in benchmark
+    totalbases = bmstats['diploidtotalbases'] # total bases in benchmark
 
-    hap1_nga50 = 0
-    hap1_lga50 = 0
-    hap1_nga90 = 0
-    hap1_lga90 = 0
-    hap1_aunga = 0
+    nga50 = 0
+    lga50 = 0
+    nga90 = 0
+    lga90 = 0
+    aunga = 0
     for truthint in sorted(truthcoveredbed, key=lambda h: len(h), reverse=True):
         alignlength = len(truthint)
         totalrefaligned = totalrefaligned + alignlength
         numberrefaligns = numberrefaligns + 1
 
-        if totalrefaligned >= 0.5*hap1totalbases and hap1_nga50 == 0:
-            hap1_nga50 = alignlength
-            hap1_lga50 = numberrefaligns
-        if totalrefaligned >= 0.9*hap1totalbases and hap1_nga90 == 0:
-            hap1_nga90 = alignlength
-            hap1_lga90 = numberrefaligns
-        hap1_aunga = hap1_aunga + alignlength*alignlength/hap1totalbases
+        if totalrefaligned >= 0.5*totalbases and nga50 == 0:
+            nga50 = alignlength
+            lga50 = numberrefaligns
+        aunga = aunga + alignlength*alignlength/totalbases
 
     matbenchcovered = 0
     patbenchcovered = 0
@@ -397,37 +383,17 @@ def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstat
         if phap2.match(chrom):
             patbenchcovered = patbenchcovered + end - start
 
-    #longesttestalignment = 0
-    #totaltestmatcovered = 0
-    #totaltestpatcovered = 0
-    #for testint in mergedtestmatcoveredbed:
-        #alignlength = len(testint)
-        #totaltestmatcovered = totaltestmatcovered + alignlength
-        #if alignlength > longesttestalignment:
-            #longesttestalignment = alignlength
-#
-    #for testint in mergedtestpatcoveredbed:
-        #alignlength = len(testint)
-        #totaltestpatcovered = totaltestpatcovered + alignlength
-        #if alignlength > longesttestalignment:
-            #longesttestalignment = alignlength
-#
-    #bmstats["testmattotalcovered"] = totaltestmatcovered
-    #bmstats["testpattotalcovered"] = totaltestpatcovered
     bmstats["benchtotalcovered"] = totalbenchcovered
-    bmstats["mataunga"] = hap1_aunga
 
     with open(generalstatsfile, "a") as gsfh:
-        gsfh.write("\nAligned contig bases:\n\n")
-        gsfh.write("NGA50 (for MATERNAL benchmark haplotype): " + str(round(hap1_nga50/1000000, 3)) + "Mb\n")
-        gsfh.write("LGA50 (for MATERNAL benchmark haplotype): " + str(hap1_lga50) + "\n")
-        gsfh.write("NGA90 (for MATERNAL benchmark haplotype): " + str(round(hap1_nga90/1000000, 3)) + "Mb\n")
-        gsfh.write("LGA90 (for MATERNAL benchmark haplotype): " + str(hap1_lga90) + "\n")
-        gsfh.write("auNGA (for MATERNAL benchmark haplotype): " + str(round(hap1_aunga/1000000, 3)) + "Mb\n")
-        #perctestmatcovered = int(totaltestmatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
-        #perctestpatcovered = int(totaltestpatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
-        if bmstats['hap1totalbases'] > 0 or bmstats['hap2totalbases'] > 0:
-            percbenchcovered = int(1000 * totalbenchcovered / (bmstats['hap1totalbases'] + bmstats['hap2totalbases']) + 0.5) / 10
+        gsfh.write("Aligned contig bases:\n\n")
+        gsfh.write("NGA50: " + str(round(nga50/1000000, 3)) + "Mb\n")
+        gsfh.write("LGA50: " + str(lga50) + "\n")
+        gsfh.write("NGA90: " + str(round(nga90/1000000, 3)) + "Mb\n")
+        gsfh.write("LGA90: " + str(lga90) + "\n")
+        gsfh.write("auNGA: " + str(round(aunga/1000000, 3)) + "Mb\n")
+        if bmstats['diploidtotalbases'] > 0 or bmstats['diploidtotalbases'] > 0:
+            percbenchcovered = int(1000 * totalbenchcovered / bmstats['diploidtotalbases'] + 0.5) / 10
         else:
             percbenchcovered = 'NA'
         if bmstats['hap1totalbases'] > 0:
@@ -438,9 +404,6 @@ def write_aligned_stats(refobj, queryobj, truthcoveredbed, bedfiles:dict, bmstat
             percpatbenchcovered = int(1000 * patbenchcovered / bmstats['hap2totalbases'] + 0.5) / 10
         else:
             percpatbenchcovered = 'NA'
-        #gsfh.write("Total " + args.assembly + " bases in aligns to MAT chromosomes: " + str(totaltestmatcovered) + "/" + str(bmstats['totallargecontigbases']) + " (" + str(perctestmatcovered) + "% of total bases in contigs >= " + str(args.mincontiglength) + " bases)" + "\n")
-        #gsfh.write("Total " + args.assembly + " bases in aligns to PAT chromosomes: " + str(totaltestpatcovered) + "/" + str(bmstats['totallargecontigbases']) + " (" + str(perctestpatcovered) + "% of total bases in contigs >= " + str(args.mincontiglength) + " bases)" + "\n")
-        #gsfh.write("Longest " + args.assembly + " alignment length (in test assembly bases) to the benchmark: " + str(round(longesttestalignment/1000000, 3)) + "Mb\n")
         gsfh.write("Total " + args.benchmark + " covered: " + str(totalbenchcovered) + "/" + str(bmstats['totalbases']) + " (" + str(percbenchcovered) + "% of all MAT and PAT bases in benchmark)" + "\n" )
         gsfh.write("MAT " + args.benchmark + " covered: " + str(matbenchcovered) + "/" + str(bmstats['hap1totalbases']) + " (" + str(percmatbenchcovered) + "% of MAT bases in benchmark)" + "\n")
         gsfh.write("PAT " + args.benchmark + " covered: " + str(patbenchcovered) + "/" + str(bmstats['hap2totalbases']) + " (" + str(percpatbenchcovered) + "% of PAT bases in benchmark)" + "\n")
@@ -523,6 +486,38 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
 
     benchmark_stats["assemblyqv"] = consensusqv
 
+    if consensussnverrorrate != "NA":
+        if consensussnverrorrate > 0:
+            consensussnvqv = int(-10 * math.log(consensussnverrorrate, 10) + 0.5)
+        else:
+            consensussnvqv = 'Inf'
+
+        if consensussnverrorrate + phasesnverrorrate > 0:
+            qvwithsnvphaseerrors = int(-10 * math.log(consensussnverrorrate + phasesnverrorrate, 10) + 0.5)
+        else:
+            qvwithsnvphaseerrors = 'Inf'
+    else:
+        consensussnvqv = 'NA'
+        qvwithsnvphaseerrors = 'NA'
+
+    benchmark_stats["assemblysnvqv"] = consensussnvqv
+
+    if consensusindelerrorrate != "NA":
+        if consensusindelerrorrate > 0:
+            consensusindelqv = int(-10 * math.log(consensusindelerrorrate, 10) + 0.5)
+        else:
+            consensusindelqv = 'Inf'
+
+        if consensusindelerrorrate + phaseindelerrorrate > 0:
+            qvwithindelphaseerrors = int(-10 * math.log(consensusindelerrorrate + phaseindelerrorrate, 10) + 0.5)
+        else:
+            qvwithindelphaseerrors = 'Inf'
+    else:
+        consensusindelqv = 'NA'
+        qvwithindelphaseerrors = 'NA'
+
+    benchmark_stats["assemblyindelqv"] = consensusindelqv
+
     snvtypestring = ""
     totaltypesnverrors = 0
     if totalassemblybasesinaligns > 0:
@@ -564,6 +559,10 @@ def write_qv_stats(benchmark_stats:dict, alignedscorecounts:list, snverrorscorec
         gsfh.write("Number of included, non-excluded benchmark bases with primary-aligned assembly scaffold sequence: " + str(totalassemblybasesinaligns) + "\n")
         gsfh.write("Overall QV without wrong-haplotype errors: " + str(consensusqv) + "\n")
         gsfh.write("Overall QV including wrong-haplotype errors: " + str(qvwithphaseerrors) + "\n")
+        gsfh.write("Overall SNV QV without wrong-haplotype errors: " + str(consensussnvqv) + "\n")
+        gsfh.write("Overall SNV QV including wrong-haplotype errors: " + str(qvwithsnvphaseerrors) + "\n")
+        gsfh.write("Overall Indel QV without wrong-haplotype errors: " + str(consensusindelqv) + "\n")
+        gsfh.write("Overall Indel QV including wrong-haplotype errors: " + str(qvwithindelphaseerrors) + "\n")
 
     if len(alignedscorecounts) > 0:
         with open(bedfiles["qvstatsfile"], "w") as qfh:
@@ -693,8 +692,46 @@ def write_het_stats(bedfiles:dict, bmstats:dict, benchparams, args):
         gsfh.write("\nPhasing statistics (" + str(total_matching_hets) + " benchmark heterozygous sites with an aligned maternal or paternal assembly allele):\n\n")
         gsfh.write("Number of maternal alleles within alignments: " + str(num_maternal) + "\n")
         gsfh.write("Number of paternal alleles within alignments: " + str(num_paternal) + "\n")
-        gsfh.write("Number of switches between maternal and paternal alleles within a contig alignment: " + str(num_switches) + "\n")
-        gsfh.write("Switch rate per base within aligned sequence: " + str(bmstats["phaseswitchespermb"]) + " per Mb\n")
+        gsfh.write("Number of hap switches at heterozygous site alleles within alignments: " + str(num_switches) + "\n")
+        gsfh.write("Het site switch rate per megabase within aligned sequence: " + str(bmstats["phaseswitchespermb"]) + " per Mb\n")
+
+    return 0
+
+def write_hmm_phaseswitch_stats(outputfiles:dict, bmstats:dict, args):
+
+    phasebedfile = outputfiles["phaseblockbed"]
+    num_switches = 0
+    num_scaffbases = 0
+
+    last_scaff = ""
+    last_hap = ""
+    with open(phasebedfile, "r") as pfh:
+        phaseblockline = pfh.readline()
+        while phaseblockline:
+            phaseblockline = phaseblockline.rstrip()
+            fields = phaseblockline.split("\t")
+            scaff = fields[0]
+            start = int(fields[1])
+            end = int(fields[2])
+            hap = fields[3]
+
+            if scaff == last_scaff and hap != last_hap:
+                num_switches = num_switches + 1
+            else:
+                last_scaff = scaff
+                last_hap = hap
+
+            num_scaffbases = num_scaffbases + end - start
+            phaseblockline = pfh.readline()
+
+    bmstats["numhmmphaseswitches"] = num_switches
+    bmstats["numscaffoldbases"] = num_scaffbases
+    bmstats["hmmphaseswitchespermb"] = num_switches/num_scaffbases*1000000
+
+    generalstatsfile = outputfiles["generalstatsfile"]
+    with open(generalstatsfile, "a") as gsfh:
+        gsfh.write("Number of within-scaffold switches in HMM-predicted haplotype: " + str(num_switches) + "\n")
+        gsfh.write("HMM phase switch rate per megabase within scaffold sequences: " + str(bmstats["hmmphaseswitchespermb"]) + " per Mb\n")
 
     return 0
 
