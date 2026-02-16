@@ -52,7 +52,7 @@ def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
     if len(allexcludedbedfiles) == 0:
         bedobjects["allexcludedregions"] = pybedtools.BedTool("", from_string = True)
     elif len(allexcludedbedfiles) == 1:
-        bedobjects["allexcludedregions"] = pybedtools.BedTool(allexcludedbedfiles[0])
+        bedobjects["allexcludedregions"] = pybedtools.BedTool(allexcludedbedfiles[0]).sort()
     elif len(allexcludedbedfiles) > 1:
         logger.info("Merging " + str(allexcludedbedfiles) + " to create a combined excluded regions file")
         bedobjects["allexcludedregions"] = bedtoolslib.mergemultiplebedfiles(allexcludedbedfiles)
