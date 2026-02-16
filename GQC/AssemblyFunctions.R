@@ -50,7 +50,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
   firstclusters <- readlengths(clusterfiles[1]) 
   totalalignedlength <- sum(firstclusters$clusterlength)
   totallengthsquared <- sum(firstclusters$clusterlength*firstclusters$clusterlength)
-  aung <- as.integer(totallengthsquared/totalalignedlength)
+  aung <- as.integer(totallengthsquared/totalalignedlength + 0.5)
 
   plotclusterlengths(firstclusters, col=assemblycolors[1], title=plottitle, lty=1, cexval=cexval)
   if (length(contigfiles) > 1) {
@@ -110,30 +110,34 @@ assembly_mononucacc_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plott
     firststats <- readmnstatsfile(mnstatsfiles[1])
     genomename <- assemblylabels[1]
 
-    plotdata <- mononucaccuracystats(firststats)
-    mnlengths <- plotdata[seq(1,30), "lengths"]
-    accuracies <- plotdata[seq(1,30), "accuracy"]
-    accconfints <- binconf(plotdata[seq(1,30), "correctcalls"], plotdata[seq(1,30), "totals"], return.df=TRUE)
-    lowaccs <- accconfints$Lower
-    highaccs <- accconfints$Upper
-    plot(mnlengths, accuracies, xlim=c(10,40), ylim=c(0.0,1.0), pch=pchvalues[1], cex=ptexp[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Accuracy"), main=c("Accuracy of mononucleotide runs"))
-    #text(20, 0.5, labels= paste(c("Overall error rate: ", mononucerrorperc, "%"), sep="", collapse=""))
-    if (errorbars) {
-      arrows(x0=mnlengths, y0=lowaccs, x1=mnlengths, y1=highaccs, code=3, angle=90, length=0.1, col=assemblycolors[1])
-    }
+    if (length(firststats$reflength) > 0) {
+        plotdata <- mononucaccuracystats(firststats)
+        mnlengths <- plotdata[seq(1,30), "lengths"]
+        accuracies <- plotdata[seq(1,30), "accuracy"]
+        accconfints <- binconf(plotdata[seq(1,30), "correctcalls"], plotdata[seq(1,30), "totals"], return.df=TRUE)
+        lowaccs <- accconfints$Lower
+        highaccs <- accconfints$Upper
+        plot(mnlengths, accuracies, xlim=c(10,40), ylim=c(0.0,1.0), pch=pchvalues[1], cex=ptexp[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Accuracy"), main=c("Accuracy of mononucleotide runs"))
+        #text(20, 0.5, labels= paste(c("Overall error rate: ", mononucerrorperc, "%"), sep="", collapse=""))
+        if (errorbars) {
+          arrows(x0=mnlengths, y0=lowaccs, x1=mnlengths, y1=highaccs, code=3, angle=90, length=0.1, col=assemblycolors[1])
+        }
+     }
   }
   if (length(mnstatsfiles) > 1) {
     for (i in seq(2, length(mnstatsfiles))) {
       nextstats <- readmnstatsfile(mnstatsfiles[i])
-      plotdata <- mononucaccuracystats(nextstats)
-      mnlengths <- plotdata[seq(1,30), "lengths"]
-      accuracies <- plotdata[seq(1,30), "accuracy"]
-      accconfints <- binconf(plotdata[seq(1,30), "correctcalls"], plotdata[seq(1,30), "totals"], return.df=TRUE)
-      lowaccs <- accconfints$Lower
-      highaccs <- accconfints$Upper
-      points(mnlengths, accuracies, xlim=c(10,40), cex=ptexp[i], pch=pchvalues[i], col=assemblycolors[i])
-      if (errorbars) {
-        arrows(x0=mnlengths, y0=lowaccs, x1=mnlengths, y1=highaccs, code=3, angle=90, length=0.1, col=assemblycolors[i])
+      if (length(nextstats$reflength) > 0) {
+          plotdata <- mononucaccuracystats(nextstats)
+          mnlengths <- plotdata[seq(1,30), "lengths"]
+          accuracies <- plotdata[seq(1,30), "accuracy"]
+          accconfints <- binconf(plotdata[seq(1,30), "correctcalls"], plotdata[seq(1,30), "totals"], return.df=TRUE)
+          lowaccs <- accconfints$Lower
+          highaccs <- accconfints$Upper
+          points(mnlengths, accuracies, xlim=c(10,40), cex=ptexp[i], pch=pchvalues[i], col=assemblycolors[i])
+          if (errorbars) {
+            arrows(x0=mnlengths, y0=lowaccs, x1=mnlengths, y1=highaccs, code=3, angle=90, length=0.1, col=assemblycolors[i])
+          }
       }
     }
   }
@@ -148,46 +152,50 @@ assembly_mononucqv_plot <- function(mnstatsfiles=c(), assemblylabels=c(), plotti
 
   if (length(mnstatsfiles) > 0) {
     firststats <- readmnstatsfile(mnstatsfiles[1])
-    genomename <- assemblylabels[1]
-    plotdata <- mononucaccuracystats(firststats)
-    mnlengths <- plotdata[seq(1,30), "lengths"]
-    errorrates <- plotdata[seq(1,30), "errors"]/plotdata[seq(1,30), "totals"]
-    errorconfints <- binconf(plotdata[seq(1,30), "errors"], plotdata[seq(1,30), "totals"], return.df=TRUE)
-    lowqvals <- -10.0*log10(errorconfints$Lower)
-    highqvals <- -10.0*log10(errorconfints$Upper)
-
-    maxqv <- max(highqvals)
-
-    qvals <- sapply(errorrates, function(x) { qv=-10.0*log10(x); return(qv) })
-    if (plotlines) {
-      plot(mnlengths, qvals, xlim=c(10,40), ylim=c(0, maxqv+1), type='l', lty=linetype, pch=pchvalues[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Phred QV Score"), main=c("Accuracy of mononucleotide runs"))
-    }
-    else {
-      plot(mnlengths, qvals, xlim=c(10,40), ylim=c(0, maxqv+1), pch=pchvalues[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Phred QV Score"), main=c("Accuracy of mononucleotide runs"), cex=ptexp[1])
-    }
-    if (errorbars) {
-      arrows(x0=mnlengths, y0=lowqvals, x1=mnlengths, y1=highqvals, code=3, angle=90, length=0, col=assemblycolors[1])
+    if (length(firststats$reflength) > 0) {
+        genomename <- assemblylabels[1]
+        plotdata <- mononucaccuracystats(firststats)
+        mnlengths <- plotdata[seq(1,30), "lengths"]
+        errorrates <- plotdata[seq(1,30), "errors"]/plotdata[seq(1,30), "totals"]
+        errorconfints <- binconf(plotdata[seq(1,30), "errors"], plotdata[seq(1,30), "totals"], return.df=TRUE)
+        lowqvals <- -10.0*log10(errorconfints$Lower)
+        highqvals <- -10.0*log10(errorconfints$Upper)
+    
+        maxqv <- max(highqvals)
+    
+        qvals <- sapply(errorrates, function(x) { qv=-10.0*log10(x); return(qv) })
+        if (plotlines) {
+          plot(mnlengths, qvals, xlim=c(10,40), ylim=c(0, maxqv+1), type='l', lty=linetype, pch=pchvalues[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Phred QV Score"), main=c("Accuracy of mononucleotide runs"))
+        }
+        else {
+          plot(mnlengths, qvals, xlim=c(10,40), ylim=c(0, maxqv+1), pch=pchvalues[1], col=assemblycolors[1], xlab=c("Mononucleotide run length"), ylab=c("Phred QV Score"), main=c("Accuracy of mononucleotide runs"), cex=ptexp[1])
+        }
+        if (errorbars) {
+          arrows(x0=mnlengths, y0=lowqvals, x1=mnlengths, y1=highqvals, code=3, angle=90, length=0, col=assemblycolors[1])
+        }
     }
   }
   if (length(mnstatsfiles) > 1) {
     for (i in seq(2, length(mnstatsfiles))) {
       nextstats <- readmnstatsfile(mnstatsfiles[i])
-      plotdata <- mononucaccuracystats(nextstats)
-      mnlengths <- plotdata[seq(1,30), "lengths"]
-      errorrates <- plotdata[seq(1,30), "errors"]/plotdata[seq(1,30), "totals"]
-      errorconfints <- binconf(plotdata[seq(1,30), "errors"], plotdata[seq(1,30), "totals"], return.df=TRUE)
-      lowqvals <- -10.0*log10(errorconfints$Lower)
-      highqvals <- -10.0*log10(errorconfints$Upper)
-
-      qvals <- sapply(errorrates, function(x) { qv=-10.0*log10(x); return(qv) })
-      if (plotlines) {
-        points(mnlengths, qvals, xlim=c(10,40), type='l', lty=linetype, pch=pchvalues[i], col=assemblycolors[i])
-      }
-      else {
-        points(mnlengths, qvals, xlim=c(10,40), cex=ptexp[i], pch=pchvalues[i], col=assemblycolors[i])
-      }
-      if (errorbars) {
-        arrows(x0=mnlengths, y0=lowqvals, x1=mnlengths, y1=highqvals, code=3, angle=90, length=0, col=assemblycolors[i])
+      if (length(nextstats$reflength) > 0) {
+          plotdata <- mononucaccuracystats(nextstats)
+          mnlengths <- plotdata[seq(1,30), "lengths"]
+          errorrates <- plotdata[seq(1,30), "errors"]/plotdata[seq(1,30), "totals"]
+          errorconfints <- binconf(plotdata[seq(1,30), "errors"], plotdata[seq(1,30), "totals"], return.df=TRUE)
+          lowqvals <- -10.0*log10(errorconfints$Lower)
+          highqvals <- -10.0*log10(errorconfints$Upper)
+    
+          qvals <- sapply(errorrates, function(x) { qv=-10.0*log10(x); return(qv) })
+          if (plotlines) {
+            points(mnlengths, qvals, xlim=c(10,40), type='l', lty=linetype, pch=pchvalues[i], col=assemblycolors[i])
+          }
+          else {
+            points(mnlengths, qvals, xlim=c(10,40), cex=ptexp[i], pch=pchvalues[i], col=assemblycolors[i])
+          }
+          if (errorbars) {
+            arrows(x0=mnlengths, y0=lowqvals, x1=mnlengths, y1=highqvals, code=3, angle=90, length=0, col=assemblycolors[i])
+          }
       }
     }
   }
