@@ -10,7 +10,7 @@ where = [""]
 
 [project]
 name = "GQC"
-version = "1.1.0-beta"
+version = "1.1.0"
 authors = [
   { name="Nancy F. Hansen", email="nhansen@mail.nih.gov" },
 ]

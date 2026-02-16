@@ -2,7 +2,7 @@
 
 The GQC python package analyses a user-supplied alignment of a test assembly to a benchmark assembly (preferably from the same sample), and prints general statistics, BED-formatted regions regarding the alignments and discrepancies within them, along with PDF-formatted plots. In addition, it reports statistics regarding discrepancies between aligned sequencing read sets and a benchmark that can help to elucidate sequencing platform strengths and weaknesses. Example outputs of various assembly and read benchmarking using GQC with the [HG002v1.1](https://github.com/marbl/HG002) assembly are available on [AWS](https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=T2T/HG002/assemblies/benchmarking/analyses/).
 
-The program was written by Nancy Fisher Hansen, a staff scientist in the [Genome Informatics Section](https://genomeinformatics.github.io/), Center for Genomics and Data Science Research, National Human Genome Research Institute (NHGRI). Nancy can be reached at nhansen@mail.nih.gov.
+The program was written by Nancy Fisher Hansen, a staff scientist in the [Genome Informatics Section](https://genomeinformatics.github.io/), Center for Genomics and Data Science Research, National Human Genome Research Institute (NHGRI). Nancy can be reached at nhansen@mail.nih.gov. More complete documentation is available at [https://gqc.readthedocs.io](https://gqc.readthedocs.io).
 
 ## Table of contents
 - [Install](#install)
