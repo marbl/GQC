@@ -198,9 +198,9 @@ def main() -> None:
             markerbed = outputfiles["phasemarkerbed"]
         else:
             markerbed = outputfiles["mergedphasemarkerbed"]
-        if not os.path.exists(markerbed):
-            print("File " + markerbed + " does not exist--calling FASTK to generate one")
-            logger.info("File " + markerbed + " does not exist--calling FASTK to generate one")
+        if (not os.path.exists(markerbed)) or (os.path.getsize(markerbed) == 0):
+            print("File " + markerbed + " does not exist or is empty--calling FASTK to generate one")
+            logger.info("File " + markerbed + " does not exist or is empty--calling FASTK to generate one")
             check_for_fastk()
             phasing.map_benchmark_hapmers_onto_assembly(args.queryfasta, benchparams["matmarkerdb"], benchparams["patmarkerdb"], outputdir, outputfiles)
     
