@@ -36,6 +36,8 @@ def check_for_bedtools():
 def check_for_aligner(aligner:str):
     if aligner == "winnowmap2":
         aligner = "winnowmap"
+    if aligner == "lastz":
+        aligner = "lastz_32"
     if shutil.which(aligner) is None:
         print("You don\'t seem to have the required aligner " + aligner + " installed in your path. Please install it")
         logger.critical("You don\'t seem to have the required aligner " + aligner + " installed in your path. Please install it")
@@ -93,6 +95,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('--splitdistance', type=int, required=False, default=10000, help='By default, split alignments when they contain indels of this size or greater')
     parser.add_argument('--alpha', type=float, required=False, default=0.05, help='emission probability for displaying opposite haplotype markers in HMM phase block algorithm')
     parser.add_argument('--beta', type=float, required=False, default=0.01, help='transition probability for changing haplotype state between adjacent markers (regardless of distance between them, unless --distancemultiplier value is set) in HMM phase block algorithm')
+    parser.add_argument('--dropwfmashextensions', action='store_true', required=False, help='for wfmash alignments, drop _# extensions from query names in BAM files')
     #parser.add_argument('--distancemultiplier', type=int, required=False, default=0, help='set the transition probability between two different states to the value of beta times the number of bases between the two markers divided by this value')
 
     return parser
@@ -248,11 +251,11 @@ def main() -> None:
         patalignedintervals.saveas(outputfiles["patalignedregions"])
     
         print("Finding subaligns in maternal alignments for maternal phase blocked regions of the assembly")
-        matblocksubaligns = alignparse.find_phaseblock_subaligns(matphaseblockints, matalignedintervals, mataligns)
+        matblocksubaligns = alignparse.find_phaseblock_subaligns(matphaseblockints, matalignedintervals, mataligns, args)
         mattrimmedbamfile = outputfiles["trimmedphasedalignprefix"] + ".mat.bam"
         alignparse.write_aligns_to_bamfile(mattrimmedbamfile, matblocksubaligns, headerbam=matbenchbamfile, sort=False)
         print("Finding subaligns in paternal alignments for paternal phase blocked regions of the assembly")
-        patblocksubaligns = alignparse.find_phaseblock_subaligns(patphaseblockints, patalignedintervals, pataligns)
+        patblocksubaligns = alignparse.find_phaseblock_subaligns(patphaseblockints, patalignedintervals, pataligns, args)
         pattrimmedbamfile = outputfiles["trimmedphasedalignprefix"] + ".pat.bam"
         alignparse.write_aligns_to_bamfile(pattrimmedbamfile, patblocksubaligns, headerbam=patbenchbamfile, sort=False)
 
@@ -268,7 +271,7 @@ def main() -> None:
         splitsortbam_name = splitbam_name.replace(".bam", ".sort.bam")
         if not os.path.exists(splitsortbam_name):
             alignobj = pysam.AlignmentFile(trimmedphasedbam, "rb")
-            alignparse.split_aligns_and_sort(splitbam_name, alignobj, minindelsize=args.splitdistance)
+            alignparse.split_aligns_and_sort(splitbam_name, alignobj, args, minindelsize=args.splitdistance)
             pysam.sort("-o", splitsortbam_name, splitbam_name)
             pysam.index(splitsortbam_name)
             os.remove(splitbam_name)

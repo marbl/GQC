@@ -33,6 +33,14 @@ def align_assembly_to_benchmark_haplotypes(queryfasta:str, outputfiles:dict, ben
 
         matbamfile = outputfiles["aligntomatbenchprefix"] + ".wfmdefparams.sort.bam"
         patbamfile = outputfiles["aligntopatbenchprefix"] + ".wfmdefparams.sort.bam"
+    elif (args.aligner == "lastz"):
+        if not os.path.exists(outputfiles["aligntomatbenchprefix"] + ".lastzdefparams.sort.bam"):
+            lastz_align(queryfasta, matbenchfasta, outputfiles["aligntomatbenchprefix"], args)
+        if not os.path.exists(outputfiles["aligntopatbenchprefix"] + ".lastzdefparams.sort.bam"):
+            lastz_align(queryfasta, patbenchfasta, outputfiles["aligntopatbenchprefix"], args)
+
+        matbamfile = outputfiles["aligntomatbenchprefix"] + ".lastzdefparams.sort.bam"
+        patbamfile = outputfiles["aligntopatbenchprefix"] + ".lastzdefparams.sort.bam"
     else:
         logger.critical("Unrecognized aligner " + args.aligner)
         print("Unrecognized aligner " + args.aligner)
@@ -60,6 +68,12 @@ def align_haplotype_to_haplotype(queryfasta:str, reffasta:str, outputprefix:str,
             wfmash_align(queryfasta, reffasta, outputprefix, args)
         else:
             logger.info("Skipping alignment of " + queryfasta + " to " + reffasta + " into bam file " + outputbam + " because it already exists!")
+    elif (args.aligner == "lastz"):
+        outputbam = outputprefix + ".lastzdefparams.sort.bam"
+        if not os.path.exists(outputbam):
+            lastz_align(queryfasta, reffasta, outputprefix, args)
+        else:
+            logger.info("Skipping alignment of " + queryfasta + " to " + reffasta + " into bam file " + outputbam + " because it already exists!")
     else:
         logger.critical("Unrecognized aligner " + args.aligner)
         print("Unrecognized aligner " + args.aligner)
@@ -85,7 +99,7 @@ def wfmash_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.getcwd()
     currentdir = os.getcwd()
-    command = "wfmash -t" + str(args.t) + " -Y \'#\' --sam " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wfmdefparams.sort.bam > " + prefix + ".wfmdefparams.out 2>&1"
+    command = "wfmash -t" + str(args.t) + " -Y \'#\' -a " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wfmdefparams.sort.bam > " + prefix + ".wfmdefparams.out 2>&1"
     print("Running " + command)
     logger.debug("Running " + command)
     proc = subprocess.Popen(command, shell=True, env=env)
@@ -106,6 +120,40 @@ def winnowmap2_align(queryfasta:str, benchfasta:str, prefix:str, repk19file:str,
     proc.wait()
 
     index_bam_file(prefix + ".wm2defparams.sort.bam")
+
+    return 0
+
+def lastz_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
+    env = os.environ.copy()
+    env['LD_LIBRARY_PATH'] = os.getcwd()
+    currentdir = os.getcwd()
+    if queryfasta.endswith('gz'):
+        unzippedqueryfasta = "newunzippedquery.fasta"
+        command = "gunzip -c " + queryfasta + " > " + unzippedqueryfasta
+        proc = subprocess.Popen(command, shell=True, env=env)
+        proc.wait()
+    else:
+        unzippedqueryfasta = queryfasta
+    if benchfasta.endswith('gz'):
+        unzippedtargetfasta = "newunzippedtarget.fasta"
+        command = "gunzip -c " + benchfasta + " > " + unzippedtargetfasta
+        proc = subprocess.Popen(command, shell=True, env=env)
+        proc.wait()
+    else:
+        unzippedtargetfasta = benchfasta
+
+    command = "lastz_32 " + unzippedtargetfasta + "[multiple] " + unzippedqueryfasta + "[multiple] --format=sam | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".lastzdefparams.sort.bam > " + prefix + ".lastzdefparams.out 2>&1"
+    print("Running " + command)
+    logger.debug("Running " + command)
+    proc = subprocess.Popen(command, shell=True, env=env)
+    proc.wait()
+
+    if unzippedqueryfasta == "newunzippedquery.fasta":
+        os.remove(unzippedqueryfasta)
+    if unzippedtargetfasta == "newunzippedtarget.fasta":
+        os.remove(unzippedtargetfasta)
+
+    index_bam_file(prefix + ".lastzdefparams.sort.bam")
 
     return 0
 
