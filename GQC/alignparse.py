@@ -84,10 +84,15 @@ def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, te
 
     # if testpatbed is None, a single bed file should be written to the file passed as testmatbed:
     if not os.path.exists(testmatbed) or (testpatbed is not None and not os.path.exists(testpatbed)):
-        matpattern = benchparams['matpattern']
-        patpattern = benchparams['patpattern']
-        phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
-        phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
+        if testpatbed is not None:
+            matpattern = benchparams['matpattern']
+            patpattern = benchparams['patpattern']
+            phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
+            phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
+        else:
+            phap1 = re.compile(r".")
+            phap2 = re.compile(r".")
+
         with open(testmatbed, "w") as tmb:
             for testint in sorted(querycoveredbed, key=lambda h: (h.chrom, h.start, h.stop)):
                 if testpatbed is None or phap1.match(testint.name):
@@ -173,6 +178,9 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
         queryseq = queryobj.fetch(reference=query, start=querystart-1, end=queryend).upper()
 
     # qual scores might be None, but if they're not, add to the counts in alignedscorecounts and errorscorecounts:
+    # From pysam documentation: Quality scores are returned as a python array of unsigned chars. Note that this
+    # is not the ASCII-encoded value typically seen in FASTQ or SAM formatted files. Thus, no offset of 33 needs
+    # to be subtracted.
     alignedqualscores = align.query_alignment_qualities
 
     if alignedqualscores is not None:
@@ -205,7 +213,9 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
     matchns = re.compile(".*[nN].*")
     numops = len(alignops)
 
-    #logger.debug("Traversing alignment with " + str(numops) + " cigar ops aligning " + ref + " to " + query)
+    # tracking last operation, since (in my opinion erroneous) BAM files with adjacent insertion and deletion operations in 
+    # the cigar mess us the widening function in the following code:
+    lastop = 'M'
     while refcurrentoffset <= refend-refstart and alignopindex < len(alignops): # traverse the alignment operator by operator
         alignop = alignops[alignopindex]
         op = alignop[0]
@@ -240,8 +250,9 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                         snverrorscorecounts[snverrorscore] = snverrorscorecounts[snverrorscore] + 1
 
                 query_positions.append(querypos)
+            lastop = 'M'
 
-        if op in [2, 3]: # deletions
+        if op in [2, 3]: # deletions from reference, fewer bases in query
             refpos = refcurrentoffset-1;
             for deloffset in range(oplength):
                 query_positions.append(querycurrentoffset)
@@ -257,32 +268,45 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
                     else:
                         queryallele = queryallele + queryseq[querycurrentoffset + extendright]
                     extendright = extendright + 1
-                while querycurrentoffset - 1 - extendleft >= 0 and refcurrentoffset - 1 + oplength - extendleft >= 0 and refseq[refcurrentoffset - 1 + oplength - extendleft] == queryseq[querycurrentoffset - 1 - extendleft]:
-                    refallele = queryseq[querycurrentoffset - extendleft - 1] + refallele
-                    if queryallele == "*":
-                        queryallele = queryseq[querycurrentoffset - extendleft - 1]
-                    else:
-                        queryallele = queryseq[querycurrentoffset - extendleft - 1] + queryallele
-                    extendleft = extendleft + 1
+                if lastop != 'I':
+                    while querycurrentoffset - 1 - extendleft >= 0 and refcurrentoffset - 1 + oplength - extendleft >= 0 and refseq[refcurrentoffset - 1 + oplength - extendleft] == queryseq[querycurrentoffset - 1 - extendleft]:
+                        refallele = queryseq[querycurrentoffset - extendleft - 1] + refallele
+                        if queryallele == "*":
+                            queryallele = queryseq[querycurrentoffset - extendleft - 1]
+                        else:
+                            queryallele = queryseq[querycurrentoffset - extendleft - 1] + queryallele
+                        extendleft = extendleft + 1
             
-            # querycoordinate values still need to be adjusted due to widening?
+            # querycoordinate values still need to be adjusted due to widening:
             if strand == 'F':
                 querycoordinate = querystart + querycurrentoffset - extendleft
             else:
-                querycoordinate = queryend - querycurrentoffset - extendright
+                querycoordinate = queryend - querycurrentoffset - extendright + 1
 
             # if there are quality scores, find the median quality across this deletion for our error tally (and to report in the output)
             indelerrorscore = None
             if alignedqualscores is not None:
-                if extendleft == 0 and extendright == 0:
-                    queryquals = alignedqualscores[querycurrentoffset-1:querycurrentoffset]
+                if extendleft == 0 and extendright == 0: # no query allele--use read base immediately preceding deletion position (to left for forward, to right for reverse)
+                    if strand == 'F':
+                        queryquals = alignedqualscores[querycurrentoffset-1:querycurrentoffset]
+                    else:
+                        queryquals = alignedqualscores[querycurrentoffset:querycurrentoffset+1]
                     qualscores = [int(x) for x in queryquals]
                 else:
-                    queryquals = alignedqualscores[querycurrentoffset-extendleft:querycurrentoffset+extendright]
+                    # here we are making the change to use the earliest base's quality score (first on left for forward aligned, first on right for reverse aligned),
+                    # since PacBio callibrates its scores this way and ONT has fairly uniform scores across repetitive homopolymers
+                    # having only one quality score in the qualscores array will assure that median qualscore is the relevant quality score to count as the error
+                    #queryquals = alignedqualscores[querycurrentoffset-extendleft:querycurrentoffset+extendright]
+                    variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand # positions of insertions are positions to the left of first inserted base
+                    if strand == 'F':
+                        logger.debug(variantname + ": Forward strand deleted sequence has first qualscore (left side of align) " + str(alignedqualscores[querycurrentoffset-extendleft]) + " and last qualscore (right side of align) " + str(alignedqualscores[querycurrentoffset+extendright - 1]))
+                        queryquals = alignedqualscores[querycurrentoffset-extendleft:querycurrentoffset-extendleft + 1]
+                    else:
+                        logger.debug(variantname + ": Reverse strand deleted sequence has first qualscore (right side of align) " + str(alignedqualscores[querycurrentoffset+extendright - 1]) + " and last qualscore (left side of align) " + str(alignedqualscores[querycurrentoffset-extendleft]))
+                        queryquals = alignedqualscores[querycurrentoffset+extendright - 1:querycurrentoffset+extendright]
                     qualscores = [int(x) for x in queryquals]
                 if len(qualscores)==0:
                     variantname = variantname + ""
-                    #logger.debug("Variant with pos " + ref + ":" + str(refpos+refstart-extendleft) + "-" + str(refpos+refstart+oplength+extendright) + " name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " and length of qualscores is zero!")
                 else:
                     numquals = len(qualscores)
                     # if even number of qual scores, drop the top one so the lower of the two medians is chosen (rather than an average, which may not be represented in the total qv score counts)
@@ -308,53 +332,77 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
             else:
                 variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand # positions of insertions are positions to the left of first inserted base
                 #logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has query surrounding seq " + querysurroundingseq + " was excluded")
+            lastop = 'D'
 
         if op == 1: # insertion
             refpos = refcurrentoffset-1;
             refallele = "*"
             queryallele = queryseq[querycurrentoffset:querycurrentoffset+oplength] # one-based querystart+querycurrentoffset to querystart+querycurrentoffset+oplength-1 if forward strand, queryend-querycurrentoffset to queryend-querycurrentoffset-oplength+1 if reverse
-            if alignedqualscores is not None:
-                queryquals = alignedqualscores[querycurrentoffset:querycurrentoffset+oplength]
-                qualscores = [int(x) for x in queryquals]
+            #if alignedqualscores is not None:
+                #queryquals = alignedqualscores[querycurrentoffset:querycurrentoffset+oplength]
+                #queryquals = alignedqualscores[querycurrentoffset-1:querycurrentoffset+oplength-1]
+                #qualscores = [int(x) for x in queryquals]
+                #for i in range(len(qualscores)):
+                    #logger.debug("Root insertion has quality " + str(qualscores[i]))
             #query_positions.append(querycurrentoffset)
             extendright = 0
             extendleft = 0
             if widen is True: # n.b. - this will *lower* the righthand coordinate of reverse strand queries by "extendright"
                 while querycurrentoffset + extendright < queryalignlength and refcurrentoffset + extendright < refalignlength and refseq[refcurrentoffset + extendright] == queryseq[querycurrentoffset + extendright]:
                     queryallele = queryallele + refseq[refcurrentoffset + extendright]
-                    if alignedqualscores is not None:
-                        qualscores.append(int(alignedqualscores[querycurrentoffset + extendright]))
+                    #if alignedqualscores is not None:
+                        #qualscores.append(int(alignedqualscores[querycurrentoffset + extendright]))
+                        #logger.debug("Appending " + str(qualscores[-1]) + " to right of qual array")
                     if refallele == "*":
                         refallele = refseq[refcurrentoffset + extendright]
                     else:
                         refallele = refallele + refseq[refcurrentoffset + extendright]
                     extendright = extendright + 1
-                while querycurrentoffset - 1 + oplength - extendleft >= 0 and refcurrentoffset - 1 - extendleft >= 0 and refseq[refcurrentoffset - 1 - extendleft] == queryseq[querycurrentoffset - 1 + oplength - extendleft]:
-                    queryallele = refseq[refcurrentoffset - extendleft - 1] + queryallele
-                    if alignedqualscores is not None:
-                        qualscores.insert(0, int(alignedqualscores[querycurrentoffset - 1 + oplength - extendleft]))
-                    if refallele == "*":
-                        refallele = refseq[refcurrentoffset - extendleft - 1]
-                    else:
-                        refallele = refseq[refcurrentoffset - extendleft - 1] + refallele
-                    extendleft = extendleft + 1
+                if lastop != 'D':
+                    while querycurrentoffset - 1 + oplength - extendleft >= 0 and refcurrentoffset - 1 - extendleft >= 0 and refseq[refcurrentoffset - 1 - extendleft] == queryseq[querycurrentoffset - 1 + oplength - extendleft]:
+                        queryallele = refseq[refcurrentoffset - extendleft - 1] + queryallele
+                        #if alignedqualscores is not None:
+                            #qualscores.insert(0, int(alignedqualscores[querycurrentoffset - 1 + oplength - extendleft]))
+                            #logger.debug("Appending " + str(qualscores[0]) + " to left of qual array")
+                        if refallele == "*":
+                            refallele = refseq[refcurrentoffset - extendleft - 1]
+                        else:
+                            refallele = refseq[refcurrentoffset - extendleft - 1] + refallele
+                        extendleft = extendleft + 1
             if strand == 'F':
                 querycoordinate = querystart + querycurrentoffset - extendleft
                 querycoordend = querycoordinate + oplength - 1 # this is potentially off by one and could be a bug (see its use below)
             else:
-                querycoordinate = queryend - querycurrentoffset - extendleft
+                #querycoordinate = queryend - querycurrentoffset - extendleft
+                querycoordinate = queryend - querycurrentoffset - extendright
                 querycoordend = querycoordinate - oplength - 1 # this is potentially off by one and could be a bug (see its use below)
 
             # if there are quality scores, find the median quality across this insertion for our error tally (and to report in the output)
             indelerrorscore = None
             if alignedqualscores is not None:
-                numquals = len(qualscores)
-                # if even number of qual scores, drop the top one so the lower of the two medians is chosen (rather than an average, which may not be represented in the total qv score counts)
-                if numquals==2*int(numquals/2):
-                    qualscores.pop()
-                medqual = int(statistics.median(qualscores))
-                indelerrorscorecounts[medqual] = indelerrorscorecounts[medqual] + 1
-                indelerrorscore = medqual
+                ## Changing to use first quality score within widened, inserted sequence (in read alignment direction) because PacBio calibrates indel quality scores at that position:
+                #numquals = len(qualscores)
+                ## if even number of qual scores, drop the top one so the lower of the two medians is chosen (rather than an average, which may not be represented in the total qv score counts)
+                #if numquals==2*int(numquals/2):
+                    #qualscores.pop()
+                #medqual = int(statistics.median(qualscores))
+                #indelerrorscorecounts[medqual] = indelerrorscorecounts[medqual] + 1
+                #indelerrorscore = medqual
+                variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand
+                logger.debug(variantname + " querycurrentoffset " + str(querycurrentoffset) + " extendleft " + str(extendleft) + " extendright " + str(extendright) + " oplength " + str(oplength))
+                queryquals = alignedqualscores[querycurrentoffset-extendleft:querycurrentoffset + oplength+extendright]
+                indelscores = [int(x) for x in queryquals]
+                if strand == 'F':
+                    indelerrorscore = indelscores[0]
+                    for i in range(len(indelscores)):
+                        logger.debug(str(i) + "\t" + str(indelscores[i]))
+                    logger.debug(variantname + ": Forward strand inserted sequence has first qualscore (left side of align) " + str(indelscores[0]) + " and last qualscore (right side of align) " + str(indelscores[-1]))
+                else:
+                    for i in range(len(indelscores)):
+                        logger.debug(str(i) + "\t" + str(indelscores[i]))
+                    indelerrorscore = indelscores[-1]
+                    logger.debug(variantname + ": Reverse strand inserted sequence has first qualscore (right side of align) " + str(indelscores[-1]) + " and last qualscore (left side of align) " + str(indelscores[0]))
+                indelerrorscorecounts[indelerrorscore] = indelerrorscorecounts[indelerrorscore] + 1
 
             # check neighboring bases for Ns, which can create misleading/possibly wrong variants
             [refleftbase, refrightbase] = ["", ""]
@@ -376,6 +424,7 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
             else:
                 variantname=query+"_"+str(querycoordinate)+"_"+refallele+"_"+queryallele+"_"+strand
                 #logger.debug("Variant with name " + variantname + " and queryallele " + queryallele + " and refallele " + refallele + " has ref surrounding seq " + refsurroundingseq + " was excluded")
+            lastop = 'I'
 
         # advance current positions: cases where reference coord advances (MDN=X):
         if op in [0, 2, 3, 7, 8]:
@@ -434,17 +483,17 @@ def align_variants(align, queryobj, query:str, querystart:int, queryend:int, ref
 
     return variantlist
 
-def split_aligns_and_sort(splitbamname, bamobj, minindelsize=10000):
+def split_aligns_and_sort(splitbamname, bamobj, args, minindelsize=10000):
     with pysam.AlignmentFile(splitbamname, "wb", header=bamobj.header) as sbfh:
         for align in bamobj.fetch():
             if align.is_secondary:
                 continue
-            splitaligns = split_align_on_indels(align, minindelsize)
+            splitaligns = split_align_on_indels(align, args, minindelsize)
             numaligns = len(splitaligns)
             for splitalign in splitaligns:
                 sbfh.write(splitalign)
 
-def split_align_on_indels(align, minindelsize=10000)->list:
+def split_align_on_indels(align, args, minindelsize=10000)->list:
 
     subaligninfo = [] # array of data regarding the sub-alignments
 
@@ -525,7 +574,7 @@ def split_align_on_indels(align, minindelsize=10000)->list:
     subalignlength = refcurrentoffset - reflastalignend
     subaligninfo.append({'alignedquerystart':querylastalignend, 'alignedqueryend':querycurrentoffset, 'alignedrefstart':refstart+reflastalignend, 'alignedrefend':refstart+refcurrentoffset, 'cigarops':alignops[lastalignopindex:currentalignopindex], 'subalignlength':subalignlength, 'segnum':segnumber })
 
-    subaligns = create_subalignobjects(align, subaligninfo, hardcliplongest)
+    subaligns = create_subalignobjects(align, subaligninfo, hardcliplongest, args)
 
     return subaligns
 
@@ -584,7 +633,7 @@ def count_consumed_query(cigarops)->int:
             queryconsumed = queryconsumed + oplength
     return queryconsumed
 
-def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool)->list:
+def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool, args)->list:
 
     querysamseq = align.query_sequence
     samseqlength = len(querysamseq)
@@ -594,7 +643,10 @@ def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool)->list
     cigarops = align.cigartuples
     for aligninfo in sorted(subaligninfo, key=lambda d: d['subalignlength'], reverse=True):
         newalign = pysam.AlignedSegment()
-        newalign.query_name = align.query_name
+        queryname = align.query_name
+        if args.aligner == "wfmash" and args.dropwfmashextensions:
+            queryname = queryname.rsplit("_", 1)[0]
+        newalign.query_name = queryname
         newalign.reference_id = align.reference_id
         newalign.mapping_quality = align.mapping_quality
         newalign.reference_start = aligninfo['alignedrefstart'] - 1
@@ -602,7 +654,7 @@ def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool)->list
         oldqueryconsumed = count_consumed_query(aligninfo['cigarops'])
         newqueryconsumed = count_consumed_query(cigartuples)
         if oldqueryconsumed != newqueryconsumed:
-            logger.info("Cigar op length change for " + align.query_name)
+            logger.info("Cigar op length change for " + queryname)
             logger.info("Old length: " + str(oldqueryconsumed) + "\nNew length: " + str(newqueryconsumed))
 
         # soft clip the longest unless hardcliplongest was specified
@@ -621,7 +673,7 @@ def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool)->list
             try:
                 newalign.cigartuples = cigarlist
             except OverflowError:
-                logger.critical("Overflow Error while retrieving supplementary CIGAR string. Read name: {0}, Position: {1}, CIGAR: {2}".format(align.query_name, str(aligninfo['alignedquerystart']), str(aligninfo['alignedrefstart'])))
+                logger.critical("Overflow Error while retrieving supplementary CIGAR string. Read name: {0}, Position: {1}, CIGAR: {2}".format(queryname, str(aligninfo['alignedquerystart']), str(aligninfo['alignedrefstart'])))
                 continue
             #for cigar in cigarlist:
                 #logger.debug("CIGAR\t" + str(cigar[0]) + ":" + str(cigar[1]))
@@ -641,7 +693,7 @@ def create_subalignobjects(align, subaligninfo:list, hardcliplongest:bool)->list
             try:
                 newalign.cigartuples = cigarlist
             except OverflowError:
-                logger.critical("Overflow Error while retrieving supplementary CIGAR string. Read name: {0}, Position: {1}, CIGAR: {2}".format(align.query_name, str(aligninfo['alignedquerystart']), str(aligninfo['alignedrefstart'])))
+                logger.critical("Overflow Error while retrieving supplementary CIGAR string. Read name: {0}, Position: {1}, CIGAR: {2}".format(queryname, str(aligninfo['alignedquerystart']), str(aligninfo['alignedrefstart'])))
                 continue
             query_seqstart = aligninfo['alignedquerystart'] + align.query_alignment_start
             query_seqend = aligninfo['alignedqueryend'] + align.query_alignment_start
@@ -1110,7 +1162,7 @@ def split_disjoint_clusters(refalignclusters:list, maxdistance:int)->list:
 def trim_bamfile_to_intervals(bamfile, intervals, outputbam, headerbam, args, sort=True, index=True):
 
     [aligns, alignedintervals] = index_aligns_by_boundaries(bamfile, args)
-    subaligns = find_phaseblock_subaligns(intervals, alignedintervals, aligns)
+    subaligns = find_phaseblock_subaligns(intervals, alignedintervals, aligns, args)
     write_aligns_to_bamfile(outputbam, subaligns, headerbam=headerbam, sort=sort, index=index)
 
 def index_aligns_by_boundaries(bamfile, args):
@@ -1124,6 +1176,8 @@ def index_aligns_by_boundaries(bamfile, args):
             continue
         if align.reference_length >= args.minalignlength:
             query, querystart, queryend, ref, refstart, refend, strand = retrieve_align_data(align)
+            if args.aligner == "wfmash" and args.dropwfmashextensions:
+                query = query.rsplit("_", 1)[0]
             alignname = query + "_" + str(querystart) + "_" + str(queryend)
             alignbedstring = alignbedstring + query + "\t" + str(querystart) + "\t" + str(queryend) + "\t" + str(alignname) + "\n"
             aligndict[alignname] = align
@@ -1133,7 +1187,7 @@ def index_aligns_by_boundaries(bamfile, args):
     return [aligndict, alignbedtool]
 
 # Trim alignments to the boundaries of phase blocks:
-def find_phaseblock_subaligns(phaseblockints, alignedintervals, aligndict):
+def find_phaseblock_subaligns(phaseblockints, alignedintervals, aligndict, args):
 
     # For each alignment, create a list of intersected intervals representing phaseblock regions within the alignment
     # Intervals are in the direction of the query, even if the alignment is on the reverse strand
@@ -1157,6 +1211,8 @@ def find_phaseblock_subaligns(phaseblockints, alignedintervals, aligndict):
             continue
         alignobj = aligndict[alignname]
         query, querystart, queryend, ref, refstart, refend, strand = retrieve_align_data(alignobj)
+        if args.aligner == "wfmash" and args.dropwfmashextensions:
+                query = query.rsplit("_", 1)[0]
         phaseblockintersects = phasedaligndict[alignname]
         subaligninfo = []
         segnumber = 1
@@ -1201,7 +1257,7 @@ def find_phaseblock_subaligns(phaseblockints, alignedintervals, aligndict):
         hardcliplongest = False
         if alignobj.is_supplementary or (left_hardclip > 0) or (right_hardclip > 0):
             hardcliplongest = True
-        subalignobjs = create_subalignobjects(alignobj, subaligninfo, hardcliplongest)
+        subalignobjs = create_subalignobjects(alignobj, subaligninfo, hardcliplongest, args)
         subalignlist = subalignlist + subalignobjs
 
     return subalignlist

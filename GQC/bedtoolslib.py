@@ -114,7 +114,7 @@ def genomeintervals(fastafile:str):
     return pybedtools.BedTool(bedstring, from_string=True)
 
 def binintervals(intervals, binsize=10000, outbedfile=None):
-    binbedtring = ""
+    binbedstring = ""
     for interval in intervals:
         chrom = interval.chrom
         start = interval.start

@@ -28,14 +28,15 @@ def write_structural_errors(aligndata:list, refobj, queryobj, outputdict, bmstat
                 if refentry == current_align["target"] and query == current_align["query"] and strand == current_align["strand"]:
                     if strand == "+":
                         querydiff = querystart - current_align["queryend"]
+                        netdiff = querydiff - refdiff
                         query1 = current_align["queryend"]
                         query2 = querystart
                     else:
                         querydiff = queryend - current_align["querystart"]
+                        netdiff = -1.0 * querydiff - refdiff
                         query1 = querystart
                         query2 = current_align["queryend"]
    
-                    netdiff = querydiff - refdiff
                     if refdiff < querydiff: # refdiff less than querydiff (insertion), netshift positive
                         if refdiff > 0:
                             sfh.write(refentry + "\t" + str(current_align["targetend"] - 1) + "\t" + str(refstart) + "\tSameContigInsertion\t" + query + "\t" + str(query1) + "\t" + str(query2) + "\t" + str(current_align["targetend"]) + "\t" + str(refstart) + "\t" + str(netdiff) + "\t" + strand + "\n")
