@@ -199,6 +199,7 @@ def main() -> None:
         stats.write_read_error_summary(errorstats, outputfiles)
         if len(errorstats["alignedqualscorecounts"]) > 0:
             plots.plot_read_error_stats(args.readsetname, args.benchmark, outputdir)
+            plots.plot_read_qv_score_concordance(args.readsetname, args.benchmark, outputdir)
 
 
 if __name__ == "__main__":
