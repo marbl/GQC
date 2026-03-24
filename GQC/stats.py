@@ -864,8 +864,10 @@ def write_read_str_stats(strlabel:str, stats:dict, outputfiles:dict, args):
     with open(lengthaccuracyfile, "w") as lfh:
         lfh.write("RefLength\tCorrect\tLengthError\tComplexError\tFlankError\tHet\n")
         for refstrlength in sorted(correctbylength.keys()):
-            accrate = correctbylength[refstrlength]/(correctbylength[refstrlength] + lengtherrorbylength[refstrlength] + complexbylength[refstrlength] + flankbylength[refstrlength])
-            lfh.write(str(refstrlength) + "\t" + str(correctbylength[refstrlength]) + "\t" + str(lengtherrorbylength[refstrlength]) + "\t" + str(complexbylength[refstrlength]) + "\t" + str(flankbylength[refstrlength]) + "\t" + str(hetbylength[refstrlength]) + "\t" + str(accrate) + "\n")
+            denom = correctbylength[refstrlength] + lengtherrorbylength[refstrlength] + complexbylength[refstrlength] + flankbylength[refstrlength]
+            if denom > 0:
+                accrate = correctbylength[refstrlength]/(correctbylength[refstrlength] + lengtherrorbylength[refstrlength] + complexbylength[refstrlength] + flankbylength[refstrlength])
+                lfh.write(str(refstrlength) + "\t" + str(correctbylength[refstrlength]) + "\t" + str(lengtherrorbylength[refstrlength]) + "\t" + str(complexbylength[refstrlength]) + "\t" + str(flankbylength[refstrlength]) + "\t" + str(hetbylength[refstrlength]) + "\t" + str(accrate) + "\n")
 
     with open(lengthdiffaccfile, "w") as dfh:
         dfh.write("LengthDiff\tType\tNumReads\n")

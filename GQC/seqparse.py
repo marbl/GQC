@@ -261,7 +261,7 @@ def write_assembly_bedfiles(fastaobj, args, compareparams, happrefix, bedobjects
     # write a "genome bed file" for this fasta object, naming it <happrefix>.genome.bed
     testoutputdict = {"testgenomebed": args.prefix + "/" + happrefix + ".genome.bed"}
     testbeddict = { }
-    write_test_genome_bedfile(fastaobj, args, testoutputdict, testbeddict)
+    write_whole_genome_bedfile(fastaobj, args, testoutputdict, testbeddict, "testgenomeregions", "testgenomebed")
     bedobjects[happrefix + "genomeregions"] = testbeddict["testgenomeregions"]
 
     # write a bed file of locations of Ns
