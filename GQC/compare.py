@@ -313,7 +313,7 @@ def main() -> None:
             splitsortbam_name = splitbam_name.replace(".bam", ".sort.bam")
             if not os.path.exists(splitsortbam_name):
                 alignobj = pysam.AlignmentFile(trimmedphasedbam, "rb")
-                alignparse.split_aligns_and_sort(splitbam_name, alignobj, minindelsize=args.splitdistance)
+                alignparse.split_aligns_and_sort(splitbam_name, alignobj, args, minindelsize=args.splitdistance)
                 pysam.sort("-o", splitsortbam_name, splitbam_name)
                 pysam.index(splitsortbam_name)
             alignobj = pysam.AlignmentFile(splitsortbam_name, "rb")
