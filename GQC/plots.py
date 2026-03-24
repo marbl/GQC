@@ -44,26 +44,24 @@ def plot_svcluster_align_plots(assemblyname:str, benchname:str, outputdir:str, r
     rfile_res = importlib.resources.files("GQC").joinpath('PlotChromAligns.R')
     if mode == 'compare':
         rfile_res = importlib.resources.files("GQC").joinpath('PlotAssemblyContigAligns.R')
+    rlib_res = importlib.resources.files("GQC").joinpath('AlignPlotFunctions.R')
 
     chromalignbedfiles = glob.glob(outputdir + "/" + prefix + "*.clusters.bed")
     returnvalues = []
     chromdone = {}
-    with importlib.resources.as_file(rfile_res) as rfile:
+    with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
         for chrombed in chromalignbedfiles:
+            chromosome = chrombed.replace(".clusters.bed", "")
+            chromosome = re.sub(r".*/*clustered_aligns\.", "", chromosome)
+            chromlength = refobj.get_reference_length(chromosome)
             if mode == 'bench':
-                chromosome = chrombed.replace(".clusters.bed", "")
-                chromosome = re.sub(r".*/*clustered_aligns\.", "", chromosome)
-                chromlength = refobj.get_reference_length(chromosome)
-                plotcommand = "Rscript " + str(rfile) + " " + chrombed + " " + assemblyname + " " + benchname + " " + outputdir + " " + str(chromlength)
+                plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + chrombed + " " + assemblyname + " " + benchname + " " + outputdir + " " + str(chromlength)
                 logger.debug(plotcommand)
                 returnvalues.append(os.system(plotcommand))
             elif mode == 'compare':
-                chromosome = chrombed.replace(".clusters.bed", "")
-                chromosome = re.sub(r".*/*clustered_aligns\.", "", chromosome)
                 if chromosome in chromdone.keys():
                     continue
-                chromlength = refobj.get_reference_length(chromosome)
-                plotcommand = "Rscript " + str(rfile) + " " + chromosome + " " + assemblyname + " " + benchname + " " + outputdir + " " + str(chromlength)
+                plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + chromosome + " " + assemblyname + " " + benchname + " " + outputdir + " " + str(chromlength)
                 logger.debug(plotcommand)
                 returnvalues.append(os.system(plotcommand))
                 chromdone[chromosome] = True
@@ -114,10 +112,11 @@ def plot_read_coverage_vs_gccontent(readsetname:str, genomename:str, outputdir:s
     #rfile_res = importlib.resources.files("GQC").joinpath('ReadCoverageVsGCContent.R')
     pass
 
-def plot_read_qv_score_concordance(readsetname:str, benchname:str, outputdir:str, resourcedir:str):
-    rfile_res = importlib.resources.files("GQC").joinpath('PlotAssemblyQualValueAccuracy.R')
-    with importlib.resources.as_file(rfile_res) as rfile:
-        plotcommand = "Rscript " + str(rfile) + " " + readsetname + " " + benchname + " " + outputdir + " " + resourcedir
+def plot_read_qv_score_concordance(readsetname:str, benchname:str, outputdir:str):
+    rfile_res = importlib.resources.files("GQC").joinpath('ReadQVPlot.R')
+    rlib_res = importlib.resources.files("GQC").joinpath('ReadFunctions.R')
+    with importlib.resources.as_file(rfile_res) as rfile, importlib.resources.as_file(rlib_res) as rlib:
+        plotcommand = "cat " + str(rlib) + " " + str(rfile) + " | " + "Rscript - " + readsetname + " " + benchname + " " + outputdir
         logger.info(plotcommand)
         returnvalue = os.system(plotcommand)
     return returnvalue

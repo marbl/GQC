@@ -50,7 +50,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
   firstclusters <- readlengths(clusterfiles[1]) 
   totalalignedlength <- sum(firstclusters$clusterlength)
   totallengthsquared <- sum(firstclusters$clusterlength*firstclusters$clusterlength)
-  aung <- as.integer(totallengthsquared/totalalignedlength + 0.5)
+  aungvalue <- as.integer(totallengthsquared/totalalignedlength + 0.5)
 
   plotclusterlengths(firstclusters, col=assemblycolors[1], title=plottitle, lty=1, cexval=cexval)
   if (length(contigfiles) > 1) {
@@ -75,7 +75,7 @@ assembly_ngax_plot <- function(clusterfiles, contigfiles=c(), scaffoldfiles=c(),
   }
   legend("topright", assemblylabels, col=assemblycolors, bty="n", lty=rep(1, length(clusterfiles)))
   if (aung) {
-    aunglabel=paste(c("auNGA: ", aung, "Mb"), sep="", collapse="")
+    aunglabel=paste(c("auNGA: ", aungvalue, "Mb"), sep="", collapse="")
     text(20, 50, labels=aunglabel)
   }
 }
