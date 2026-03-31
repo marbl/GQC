@@ -28,16 +28,14 @@ It is possible to calculate GQC statistics for particular types of sequence in t
 benchmark. Some examples are in the following table.
 
 .. table:: Stratification BED files
-+------------------------+-----------------------+
 
++------------------------+-----------------------+
 | Sequence type           | Include file         |
 +========================+=======================+
-
 | Gene sequence | `AWS link <https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/annotation/assemblyissues/v4_issue_breakdown/hg002.v1.1.loff.v0.6.merge.bed>`_ |
 +------------------------+-----------------------+
 | Segmental duplications  | `AWS link <https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/annotation/assemblyissues/v4_issue_breakdown/hg002v1.1.SDs.013025.merged.bed>`_ |
 +------------------------+-----------------------+
-
 | Centromere sequence   | `AWS link <https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/annotation/assemblyissues/v4_issue_breakdown/hg002v1.1.centromeres.bed>`_ |
 +------------------------+-----------------------+
 | Human satellites (HSATs) | `AWS link <https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/HG002/assemblies/annotation/assemblyissues/v4_issue_breakdown/hg002v1.1.hsats.bed>`_ |
