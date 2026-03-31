@@ -1,5 +1,5 @@
 
-.. _readbench:
+.. _compareassemblies:
 
 Comparing Assemblies
 =====================

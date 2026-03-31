@@ -3,9 +3,18 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   ?= sphinx-build
+SPHINXAUTOBUILD ?= sphinx-autobuild
 PAPER         =
 BUILDDIR      = _build
+
+ifneq ($(wildcard .venv/bin/sphinx-build),)
+SPHINXBUILD := .venv/bin/sphinx-build
+endif
+
+ifneq ($(wildcard .venv/bin/sphinx-autobuild),)
+SPHINXAUTOBUILD := .venv/bin/sphinx-autobuild
+endif
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -19,11 +28,12 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
+.PHONY: help clean html livehtml dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
+	@echo "  livehtml   to auto-build and live-preview HTML on http://127.0.0.1:8000"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -55,6 +65,9 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+livehtml:
+	$(SPHINXAUTOBUILD) -b html -d $(BUILDDIR)/doctrees . $(BUILDDIR)/html --host 127.0.0.1 --port 8000
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml

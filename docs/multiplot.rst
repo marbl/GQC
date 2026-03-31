@@ -1,5 +1,5 @@
 
-.. _readbench:
+.. _multiplot:
 
 Plotting Multiple GQC Runs Together
 ===================================
