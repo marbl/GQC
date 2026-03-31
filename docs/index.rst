@@ -11,6 +11,7 @@ GQC -- Genome Quality Checker
   readbench
   compareassemblies
   multiplot
+  stratify
   newgenomes
 
 The `GQC <http://github.com/marbl/GQC>`_ python package evaluates a test assembly by comparing it to a diploid genome benchmark (such as `HG002v1.1 <https://github.com/marbl/HG002>`_) and prints general statistics, BED-formatted scaffold regions reporting the alignments and discrepancies within them, and PDF-formatted plots. In addition, it can report statistics regarding discrepancies between aligned sequencing read sets and a benchmark which can help to deduce a sequencing platform's strengths and weaknesses. Example outputs of various assembly and read benchmarking using GQC with the `HG002v1.1 <https://github.com/marbl/HG002>`_ assembly are available on `AWS <https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=T2T/HG002/assemblies/benchmarking/analyses/>`_.

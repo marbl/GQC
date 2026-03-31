@@ -1,5 +1,5 @@
 
-.. _readbench:
+.. _newgenomes:
 
 Configuring GQC For New Genomes
 ===============================
