@@ -78,6 +78,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-c', '--config', type=str, required=False, default="compareconfig.txt", help='path to a config file specifying locations of files used by GQC compare')
     parser.add_argument('--minns', type=int, required=False, default=10, help='minimum number of consecutive Ns required to break scaffolds into contigs')
     parser.add_argument('-m', '--minalignlength', type=int, required=False, default=500, help='minimum length of alignment required to be included in alignment statistics and error counts')
+    parser.add_argument('--mm2params', type=str, required=False, default='none', help='')
     parser.add_argument('--nosplit', action='store_true', required=False, help='use haplotype alignments without splitting on large indels. Default is to split alignments at locations with indels of at least --splitdistance')
     parser.add_argument('--splitdistance', type=int, required=False, default=10000, help='By default, split alignments when they contain indels of this size or greater')
     parser.add_argument('--maxclusterdistance', type=int, required=False, default=10000, help='maximum distance within a cluster of alignments')
@@ -240,18 +241,20 @@ def main() -> None:
         logger.info("Writing phase block bed file of haplotype kmers of " + args.rname + " present within the " + args.qname + " assembly")
         q1phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(q1hapmerbed, q1phaseblockbed, hapdata['q1']['pysamobj'], alpha, transitionprob, 0)
         if not os.path.exists(q1phaseblockmergedbed):
-            q1phaseblockints.saveas(q1phaseblockmergedbed)
-        q1_to_r1_phaseblockints = q1phaseblockints.filter(lambda x: x.name=="r1")
-        q1_to_r2_phaseblockints = q1phaseblockints.filter(lambda x: x.name=="r2")
+            sortedq1phaseblockints = q1phaseblockints.sort()
+            sortedq1phaseblockints.saveas(q1phaseblockmergedbed)
+        q1_to_r1_phaseblockints = sortedq1phaseblockints.filter(lambda x: x.name=="r1")
+        q1_to_r2_phaseblockints = sortedq1phaseblockints.filter(lambda x: x.name=="r2")
 
         if not args.hap2dip:
             q2phaseblockbed = outputdir + "/" + hapdata['q2']['prefix'] + ".hmmphasedscaffolds.bed"
             q2phaseblockmergedbed = q2phaseblockbed.replace('.bed', '.merged.bed')
             q2phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(q2hapmerbed, q2phaseblockbed, hapdata['q2']['pysamobj'], alpha, transitionprob, 0)
             if not os.path.exists(q2phaseblockmergedbed):
-                q2phaseblockints.saveas(q2phaseblockmergedbed)
-            q2_to_r1_phaseblockints = q2phaseblockints.filter(lambda x: x.name=="r1")
-            q2_to_r2_phaseblockints = q2phaseblockints.filter(lambda x: x.name=="r2")
+                sortedq2phaseblockints = q2phaseblockints.sort()
+                sortedq2phaseblockints.saveas(q2phaseblockmergedbed)
+            q2_to_r1_phaseblockints = sortedq2phaseblockints.filter(lambda x: x.name=="r1")
+            q2_to_r2_phaseblockints = sortedq2phaseblockints.filter(lambda x: x.name=="r2")
 
 
     else:

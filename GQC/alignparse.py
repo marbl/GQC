@@ -1182,7 +1182,7 @@ def index_aligns_by_boundaries(bamfile, args):
             alignbedstring = alignbedstring + query + "\t" + str(querystart) + "\t" + str(queryend) + "\t" + str(alignname) + "\n"
             aligndict[alignname] = align
 
-    alignbedtool = pybedtools.BedTool(alignbedstring, from_string = True)
+    alignbedtool = pybedtools.BedTool(alignbedstring, from_string = True).sort()
 
     return [aligndict, alignbedtool]
 

@@ -58,7 +58,7 @@ def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
         bedobjects["allexcludedregions"] = bedtoolslib.mergemultiplebedfiles(allexcludedbedfiles)
     bedobjects["allexcludedregions"].saveas(outputfiles["allexcludedbed"])
     # now subtract the set of all excluded regions from the genome to obtain all regions included:
-    bedobjects["allincludedregions"] = bedobjects["benchgenomeregions"].subtract(bedobjects["allexcludedregions"])
+    bedobjects["allincludedregions"] = bedobjects["benchgenomeregions"].subtract(bedobjects["allexcludedregions"]).sort()
     bedobjects["allincludedregions"].saveas(outputfiles["includednonexcludedbed"])
 
     return 0
@@ -82,7 +82,7 @@ def write_included_bedfile(refobj, args, benchparams, outputfiles):
         if configexcludepath.is_file():
             excludeintervals = pybedtools.BedTool(configexcludepath)
             logger.info("Not including read bases aligned to regions excluded in " + configexcluderegions)
-            benchintervals = benchintervals.subtract(excludeintervals)
+            benchintervals = benchintervals.subtract(excludeintervals).sort()
 
     benchintervals.saveas(outputfiles["includedbedfile"])
     logger.info("Benchmark regions included in this analysis are written to file " + outputfiles["includedbedfile"])
@@ -113,7 +113,7 @@ def write_nonincluded_file(refobj, includedbed, nonincludedbed, bedobjects):
 
     bedobjects["benchgenomeregions"] = pybedtools.BedTool(genomebedstring, from_string = True)
     bedobjects["includedregions"] = pybedtools.BedTool(includedbed)
-    bedobjects["nonincludedregions"] = bedobjects["benchgenomeregions"].subtract(bedobjects["includedregions"])
+    bedobjects["nonincludedregions"] = bedobjects["benchgenomeregions"].subtract(bedobjects["includedregions"]).sort()
     bedobjects["nonincludedregions"].saveas(nonincludedbed)
 
     return 0
