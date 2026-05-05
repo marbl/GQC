@@ -85,7 +85,21 @@ def minimap2_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = os.getcwd()
     currentdir = os.getcwd()
-    command = "minimap2 -a -t" + str(args.t) + " -x asm5 " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".mm2defparams.sort.bam > " + prefix + ".minimap2.defparams.out 2>&1"
+
+    mm2params = args.mm2params
+    if mm2params == "asm10":
+        paramstring = " -x asm10 "
+    elif mm2params == "asm20":
+        paramstring = " -x asm20 "
+    elif mm2params == "r100":
+        paramstring = " -x asm5 -r 100 "
+    elif mm2params == "r1000":
+        paramstring = " -x asm5 -r 1000 "
+    elif mm2params == "r5000":
+        paramstring = " -x asm5 -r 5000 "
+    else:
+        paramstring = " -x asm5 "
+    command = "minimap2 -a -t" + str(args.t) + paramstring + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".mm2defparams.sort.bam > " + prefix + ".minimap2.defparams.out 2>&1"
     print("Running " + command)
     logger.debug("Running " + command)
     proc = subprocess.Popen(command, shell=True, env=env)
