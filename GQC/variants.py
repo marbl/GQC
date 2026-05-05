@@ -172,7 +172,7 @@ def lift_and_apply_hq_beds(hcbedfile:str, hcchain:str, hapchroms:list, haphcbed:
             hccorrecthapintervals.append(hapinterval)
 
     hapgenomeintervals = bedtoolslib.genomeintervals(hapfasta)
-    lcintervals = bedtoolslib.subtractintervals(hapgenomeintervals, hccorrecthapintervals)
+    lcintervals = bedtoolslib.subtractintervals(hapgenomeintervals, hccorrecthapintervals).sort()
     lcintervals.saveas(haplcbed)
 
     fastamaskcmd = "bedtools maskfasta -fi " + hapfasta + " -bed " + haplcbed + " -fo " + maskedhapfasta
