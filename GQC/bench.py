@@ -74,6 +74,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-p', '--prefix', type=str, required=True, help='prefix for output directory name, filenames have assembly name in prefix (see -A)')
     parser.add_argument('-t', type=int, required=False, default=2, help='number of processors to use')
     parser.add_argument('-a', '--aligner', type=str, required=False, default='minimap2', help='aligner to use when comparing assembly to benchmark, can be minimap2 or winnowmap2 (default winnowmap2)')
+    parser.add_argument('--mm2params', type=str, required=False, default='none', help='')
     parser.add_argument('-m', '--minalignlength', type=int, required=False, default=500, help='minimum length of alignment required to be included in alignment statistics and error counts')
     parser.add_argument('--mincontiglength', type=int, required=False, default=500, help='minimum length for contig to be included in contig statistics')
     parser.add_argument('--minns', type=int, required=False, default=10, help='minimum number of consecutive Ns required to break scaffolds into contigs')
@@ -213,21 +214,23 @@ def main() -> None:
             shortlimit = args.shortlimit
             matpattern = benchparams["matpattern"]
             phaseblockints = phasing.find_phase_blocks_from_marker_bed(markerbed, queryobj.references, shortnum, shortlimit, matpattern)
+            sortedphaseblockints = phaseblockints.sort()
         else: # use HMM algorithm to find phase blocks
             logger.info("Using HMM with emission probability " + str(args.alpha) + " and transition probability " + str(args.beta) + " to find phase blocks")
             alpha = args.alpha
             transitionprob = args.beta
             phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(markerbed, outputfiles["hmmphaseblockbed"], queryobj, alpha, transitionprob, 0)
-        phaseblockints.saveas(outputfiles["phaseblockbed"])
-        matphaseblockints = phaseblockints.filter(lambda x: x.name=="mat")
-        patphaseblockints = phaseblockints.filter(lambda x: x.name=="pat")
+            sortedphaseblockints = phaseblockints.sort()
+        sortedphaseblockints.saveas(outputfiles["phaseblockbed"])
+        sortedmatphaseblockints = sortedphaseblockints.filter(lambda x: x.name=="mat")
+        sortedpatphaseblockints = sortedphaseblockints.filter(lambda x: x.name=="pat")
     else:
         logger.info("Skipping assembly phasing as file " + outputfiles["phaseblockbed"] + " already exists and is not empty")
-        phaseblockints = BedTool(outputfiles["phaseblockbed"])
-        matphaseblockints = phaseblockints.filter(lambda x: x.name=="mat")
-        patphaseblockints = phaseblockints.filter(lambda x: x.name=="pat")
+        sortedphaseblockints = BedTool(outputfiles["phaseblockbed"]).sort()
+        sortedmatphaseblockints = sortedphaseblockints.filter(lambda x: x.name=="mat")
+        sortedpatphaseblockints = sortedphaseblockints.filter(lambda x: x.name=="pat")
 
-    #stats.write_phase_block_stats(phaseblockints, outputfiles, benchmark_stats, args)
+    #stats.write_phase_block_stats(sortedphaseblockints, outputfiles, benchmark_stats, args)
 
     # align test assembly separately to maternal and paternal haplotypes:
     logger.info("Step 4 (of 12): Aligning assembly separately to maternal and paternal haplotypes of the benchmark and gathering trimmed alignments of phased assembly regions to their corresponding haplotypes")
@@ -243,7 +246,8 @@ def main() -> None:
         for refentry in refobj.references:
             entrylength = refobj.get_reference_length(refentry)
             benchdiploidheaderstring += "@SQ\tSN:" + refentry + "\tLN:"  + str(entrylength) + "\n"
-    
+   
+        # alignedinterval bed objects are returned sorted:
         [mataligns, matalignedintervals] = alignparse.index_aligns_by_boundaries(matbenchbamfile, args)
         [pataligns, patalignedintervals] = alignparse.index_aligns_by_boundaries(patbenchbamfile, args)
     
@@ -251,11 +255,11 @@ def main() -> None:
         patalignedintervals.saveas(outputfiles["patalignedregions"])
     
         print("Finding subaligns in maternal alignments for maternal phase blocked regions of the assembly")
-        matblocksubaligns = alignparse.find_phaseblock_subaligns(matphaseblockints, matalignedintervals, mataligns, args)
+        matblocksubaligns = alignparse.find_phaseblock_subaligns(sortedmatphaseblockints, matalignedintervals, mataligns, args)
         mattrimmedbamfile = outputfiles["trimmedphasedalignprefix"] + ".mat.bam"
         alignparse.write_aligns_to_bamfile(mattrimmedbamfile, matblocksubaligns, headerbam=matbenchbamfile, sort=False)
         print("Finding subaligns in paternal alignments for paternal phase blocked regions of the assembly")
-        patblocksubaligns = alignparse.find_phaseblock_subaligns(patphaseblockints, patalignedintervals, pataligns, args)
+        patblocksubaligns = alignparse.find_phaseblock_subaligns(sortedpatphaseblockints, patalignedintervals, pataligns, args)
         pattrimmedbamfile = outputfiles["trimmedphasedalignprefix"] + ".pat.bam"
         alignparse.write_aligns_to_bamfile(pattrimmedbamfile, patblocksubaligns, headerbam=patbenchbamfile, sort=False)
 
