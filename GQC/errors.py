@@ -86,8 +86,7 @@ def classify_errors(refobj, queryobj, variants, hetsites, outputdict, benchparam
                 if args.vcf:
                     vcfrecord = vcf_format(variant, refobj, queryobj)
                     vfh.write(vcfrecord)
-
-            tfh.write(contigname + "\t" + str(pos-1) + "\t" + str(pos - 1 + len(altallele)) + "\t" + variant.name + "\t" + varqvscore + "\t" + alignstrand + "\t" + str(pos-1) + "\t" + str(pos - 1 + len(altallele)) + "\t" + errortypecolor + "\t" + errortype + "\t" + variant.vartype + "\t" + varname + "\n")
+                tfh.write(contigname + "\t" + str(pos-1) + "\t" + str(pos - 1 + len(altallele)) + "\t" + variant.name + "\t" + varqvscore + "\t" + alignstrand + "\t" + str(pos-1) + "\t" + str(pos - 1 + len(altallele)) + "\t" + errortypecolor + "\t" + errortype + "\t" + variant.vartype + "\t" + varname + "\n")
             stats["totalerrorsinaligns"] = stats["totalerrorsinaligns"] + 1
                 
             # tally statistics for non-phasing errors:
@@ -248,7 +247,7 @@ def assess_mononuc_read_coverage(align_obj, mononucbedfile, outputdict, bedinter
         includedmononucbeds = bedtoolslib.intersectintervals(mononucbedintervals, bedintervals, wa=True)
         includedmononucbeds.saveas(outputdict["includedmononucfile"])
     else:
-        mononucbedintervals.saveas(outputdict["includedmononucfile"])
+        mononucbedintervals.sort().saveas(outputdict["includedmononucfile"])
 
     mononucdict = {}
     msfh = open(mononucstatsfile, "w", buffering=1)
@@ -498,7 +497,7 @@ def assess_mononuc_read_coverage_require_flank(align_obj, refobj, mononucbedfile
         includedmononucbeds = bedtoolslib.intersectintervals(mononucbedintervals, bedintervals, wa=True)
         includedmononucbeds.saveas(outputdict["includedmononucfile"])
     else:
-        mononucbedintervals.saveas(outputdict["includedmononucfile"])
+        mononucbedintervals.sort().saveas(outputdict["includedmononucfile"])
 
     mononucdict = {}
     msfh = open(mononucstatsfile, "w", buffering=1)
