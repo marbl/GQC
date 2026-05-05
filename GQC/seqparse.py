@@ -41,7 +41,7 @@ def write_excluded_bedfile(refobj, args, benchparams, outputfiles, bedobjects):
         if configexcludepath.is_file():
             allexcludedbedfiles.append(configexcluderegions)
         else:
-            logger.warning("Exclude file " + configexcluderegions + " does not exist so will not be used")
+            logger.critical("Exclude file " + configexcluderegions + " does not exist!")
     if "nstretchregions" in benchparams.keys():
         nexcluderegions = benchparams["nstretchregions"]
         nexcludepath = Path(nexcluderegions)
