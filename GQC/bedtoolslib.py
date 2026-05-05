@@ -20,16 +20,17 @@ def mergebed(bedfile:str, collapsecolumns='4', collapseoutput='collapse', collap
 
         if numunmerged > 0:
             mergedints = unmergedints.merge(c=collapsecolumns, o=collapseoutput, delim=collapsedelim)
-            mergedints.saveas(mergedbed)
+            sortedmergedints = mergedints.sort()
+            sortedmergedints.saveas(mergedbed)
         else:
             with open(mergedbed, 'a'):
                 os.utime(mergedbed, None) 
-            mergedints = unmergedints
+            sortedmergedints = unmergedints.sort()
     else:
         logger.debug("Skipping merging of " + bedfile + ": merged bedfile " + mergedbed + " already exists")
-        mergedints = pybedtools.bedtool.BedTool(mergedbed)
+        sortedmergedints = pybedtools.bedtool.BedTool(mergedbed).sort()
 
-    return [mergedints, mergedbed]
+    return [sortedmergedints, mergedbed]
 
 def mergeintervals(intervals, collapsecolumns='4', collapseoutput='collapse', collapsedelim='|', distance=0):
 
@@ -80,10 +81,10 @@ def intersectbed(bedfile1:str, bedfile2:str, outputfile:str, writefirst=False, w
     if requirewhole:
         command = command + " -f 1.0"
     os.system(command + " > " + outputfile)
-    intersectbed = pybedtools.bedtool.BedTool(outputfile).sort()
-    intersectbed.saveas(outputfile)
+    sortedintersectbed = pybedtools.bedtool.BedTool(outputfile).sort()
+    sortedintersectbed.saveas(outputfile)
 
-    return [intersectbed, outputfile]
+    return [sortedintersectbed, outputfile]
 
 def intersectintervals(intervals1, intervals2, v=False, wo=False, wa=False, wb=False, counts=False):
 
@@ -129,6 +130,7 @@ def binintervals(intervals, binsize=10000, outbedfile=None):
 
     binnedbedobj = pybedtools.BedTool(binbedstring, from_string = True)
     if outbedfile is not None:
-        binnedbedobj.sort().saveas(outbedfile)
+        sortedbinnedbed = binnedbedobj.sort()
+        sortedbinnedbed.saveas(outbedfile)
 
-    return binnedbedobj
+    return sortedbinnedbed
