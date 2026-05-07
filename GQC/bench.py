@@ -174,10 +174,19 @@ def main() -> None:
 
     # pysam objects for the benchmark and test assembly fasta files:
     ref = Path(args.reffasta)
+    refindex = Path(args.reffasta + ".fai")
     query = Path(args.queryfasta)
+    queryindex = Path(args.queryfasta + ".fai")
+
     if not ref.is_file() or not query.is_file():
         logger.critical("Ref fasta file " + args.reffasta + " and query fasta file " + args.queryfasta + " must exist and be readable")
         exit(1)
+
+    if os.path.getmtime(args.reffasta) < os.path.getmtime(args.reffasta + ".fai") or not refindex.is_file():
+        refindex.unlink()
+    if os.path.getmtime(args.queryfasta) < os.path.getmtime(args.queryfasta + ".fai") or not queryindex.is_file():
+        queryindex.unlink()
+
     refobj = pysam.FastaFile(args.reffasta)
     queryobj = pysam.FastaFile(args.queryfasta)
 
