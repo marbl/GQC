@@ -182,9 +182,9 @@ def main() -> None:
         logger.critical("Ref fasta file " + args.reffasta + " and query fasta file " + args.queryfasta + " must exist and be readable")
         exit(1)
 
-    if os.path.getmtime(args.reffasta) < os.path.getmtime(args.reffasta + ".fai") or not refindex.is_file():
+    if os.path.getmtime(args.reffasta) > os.path.getmtime(args.reffasta + ".fai"):
         refindex.unlink()
-    if os.path.getmtime(args.queryfasta) < os.path.getmtime(args.queryfasta + ".fai") or not queryindex.is_file():
+    if os.path.getmtime(args.queryfasta) > os.path.getmtime(args.queryfasta + ".fai"):
         queryindex.unlink()
 
     refobj = pysam.FastaFile(args.reffasta)
