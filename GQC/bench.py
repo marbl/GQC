@@ -339,7 +339,7 @@ def main() -> None:
 #
            ## evaluate mononucleotide runs:
            logger.info("Step 11 (of 12): Assessing accuracy of mononucleotide runs")
-           bedtoolslib.intersectbed(benchparams["mononucruns"], outputfiles["mergedtruthcovered"], outputfile=outputfiles["coveredmononucsfile"], writefirst=True)
+           bedtoolslib.intersectbed(benchparams["mononucruns"], outputfiles["mergedincludedtruthcovered"], outputfile=outputfiles["coveredmononucsfile"], writefirst=True)
            bedtoolslib.intersectbed(outputfiles["coveredmononucsfile"], outputfiles["allexcludedbed"], outputfile=outputfiles["coveredincludedmononucsfile"], writefirst=True, v=True)
            [mononucswithvariantsbed, mononucswithvariantsbedfile] = bedtoolslib.intersectbed(outputfiles["coveredincludedmononucsfile"], outputfiles["bencherrortypebed"], outputfiles["mononucswithvariantsfile"], outerjoin=True, writeboth=True)
            mononucstats = errors.gather_mononuc_stats(outputfiles["mononucswithvariantsfile"], outputfiles["mononucstatsfile"])
