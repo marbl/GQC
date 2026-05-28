@@ -325,6 +325,10 @@ def main() -> None:
        [mergedtestmatcoveredbed, outputfiles["mergedtestmatcovered"]] = bedtoolslib.mergebed(outputfiles["testmatcovered"])
        [mergedtestpatcoveredbed, outputfiles["mergedtestpatcovered"]] = bedtoolslib.mergebed(outputfiles["testpatcovered"])
 
+       # Step 6 may be skipped when cluster files already exist; still need non-excluded denominators.
+       if "numnonexcludedbases" not in benchmark_stats:
+           alignparse.populate_numnonexcludedbases(refobj, bedregiondict, benchmark_stats)
+
        logger.info("Step 8 (of 12): Writing primary alignment statistics about " + args.assembly + " assembly")
        stats.write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, mergedincludedtruthcoveredbed, mergedtestmatcoveredbed, mergedtestpatcoveredbed, outputfiles, benchmark_stats, benchparams, args)
 
