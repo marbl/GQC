@@ -819,13 +819,25 @@ def read_bam_aligns(bamobj, mintargetlength=0)->list:
 
     return alignlist
 
+def populate_numnonexcludedbases(refobj, bedobjects:dict, benchmark_stats:dict)->None:
+    # since allexcludedregions bed object is merged, can subtract out excluded bases interval by interval
+    benchmark_stats["numnonexcludedbases"] = {}
+    for ref in refobj.references:
+        benchmark_stats["numnonexcludedbases"][ref] = refobj.get_reference_length(ref)
+    allexcludedregions = bedobjects.get("allexcludedregions")
+    if allexcludedregions is not None and len(allexcludedregions) > 0:
+        for interval in allexcludedregions:
+            ref = interval.chrom
+            if ref in benchmark_stats["numnonexcludedbases"].keys():
+                benchmark_stats["numnonexcludedbases"][ref] = benchmark_stats["numnonexcludedbases"][ref] - len(interval)
+
 # this routine assumes query start > query end for reverse strand alignments
 def assess_overall_structure(aligndata:list, refobj, queryobj, outputfiles, bedobjects, benchmark_stats, args):
 
     # create a "clustercoverage" dictionary that will contain each chromosome's number of clusters and bases covered
     benchmark_stats["clustercoverage"] = {}
     benchmark_stats["alignclusters"] = {}
-    benchmark_stats["numnonexcludedbases"] = {}
+    populate_numnonexcludedbases(refobj, bedobjects, benchmark_stats)
 
     # maximum separating distance along target to include in one cluster of alignments
     maxdistance = args.maxclusterdistance
@@ -833,16 +845,6 @@ def assess_overall_structure(aligndata:list, refobj, queryobj, outputfiles, bedo
     # create a directory for alignment line plots for each chromosome:
     output.create_output_directory(outputfiles["alignplotdir"])
     alignplotprefix = outputfiles["alignplotprefix"]
-
-    # calculate number of non-excluded bases for each ref entry:
-    # since allexcludedregions bed object is merged,can subtract out excluded bases interval by interval
-    for ref in refobj.references:
-        benchmark_stats["numnonexcludedbases"][ref] = refobj.get_reference_length(ref)
-    if bedobjects["allexcludedregions"] is not None:
-        for interval in bedobjects["allexcludedregions"]:
-            ref = interval.chrom
-            if ref in benchmark_stats["numnonexcludedbases"].keys():
-                benchmark_stats["numnonexcludedbases"][ref] = benchmark_stats["numnonexcludedbases"][ref] - len(interval)
     
     aligndict = {}
     for align in aligndata:
