@@ -302,7 +302,7 @@ def main() -> None:
     # (by default, rlis_aligndata are split alignments filtered for RLIS)
     if not os.path.exists(outputfiles["clusterlengths"]) or not os.path.exists(outputfiles["alignplotdir"]):
         alignparse.assess_overall_structure(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
-        structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, benchmark_stats, args)
+        structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
         stats.write_aligned_cluster_stats(outputfiles, benchmark_stats, args)
     else:
         logger.info("Skipping overall structural assessment because " + outputfiles["clusterlengths"] + " and directory " + outputfiles["alignplotdir"] + " already exist")
