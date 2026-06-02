@@ -54,7 +54,7 @@ def write_bedfiles(bamobj, pafaligns, refobj, queryobj, hetsites, testmatbed, te
                     variants.extend(align_variants(align, queryobj, query, querystart, queryend, refobj, ref, refstart, refend, strand, hetsites, hetsitealleles, alignedscorecounts, snverrorscorecounts, indelerrorscorecounts, True))
         # mark variants that are in excluded regions:
         logger.debug("Beginning to exclude variants in excluded regions")
-        if excludedbedobj:
+        if excludedbedobj is not None and len(excludedbedobj) > 0:
             variants = exclude_variants(variants, excludedbedobj)
             logger.debug("Finished excluding variants in excluded regions")
     else:
@@ -719,26 +719,29 @@ def exclude_variants(variants:list, excludedregionsobj:pybedtools.BedTool)->list
     numvariants = len(variants)
     logger.debug("There are " + str(numvariants) + " variants")
     variantbedstringlist = []
-    for variant in variants:
+    # bedtools truncates the BED name field (~1kb); variant names embed full
+    # ref/query alleles for large indels, so use stable numeric ids for intersect.
+    for variantindex, variant in enumerate(variants):
         chrom = variant.chrom
-        start = variant.start
-        end = variant.end
-        name = variant.name
-        variantbedstringlist.append(chrom + "\t" + str(start) + "\t" + str(end) + "\t" + name + "\n")
+        bed_start = min(int(variant.start), int(variant.end))
+        bed_end = max(int(variant.start), int(variant.end))
+        if bed_end <= bed_start:
+            bed_end = bed_start + 1
+        variantbedstringlist.append(chrom + "\t" + str(bed_start) + "\t" + str(bed_end) + "\t" + str(variantindex) + "\n")
 
     variantbedstring = ''.join(variantbedstringlist)
     variantbedobj = pybedtools.BedTool(variantbedstring, from_string=True)
     logger.debug("Created BedTool object")
     excludedvariants = bedtoolslib.intersectintervals(variantbedobj, excludedregionsobj, wa=True)
-    excludeddict = {}
+    excludedindices = set()
     for excludedvariant in excludedvariants:
-        excludeddict[excludedvariant.name] = True
+        excludedindices.add(int(excludedvariant.name))
 
     newvariants = []
     numexcluded = 0
     numretained = 0
-    for variant in variants:
-        if variant.name in excludeddict.keys():
+    for variantindex, variant in enumerate(variants):
+        if variantindex in excludedindices:
             newvariants.append(varianttuple(chrom=variant.chrom, start=variant.start, end=variant.end, name=variant.name, vartype=variant.vartype, excluded = True, qvscore=variant.qvscore))
             numexcluded = numexcluded + 1
         else:
@@ -816,13 +819,25 @@ def read_bam_aligns(bamobj, mintargetlength=0)->list:
 
     return alignlist
 
+def populate_numnonexcludedbases(refobj, bedobjects:dict, benchmark_stats:dict)->None:
+    # since allexcludedregions bed object is merged, can subtract out excluded bases interval by interval
+    benchmark_stats["numnonexcludedbases"] = {}
+    for ref in refobj.references:
+        benchmark_stats["numnonexcludedbases"][ref] = refobj.get_reference_length(ref)
+    allexcludedregions = bedobjects.get("allexcludedregions")
+    if allexcludedregions is not None and len(allexcludedregions) > 0:
+        for interval in allexcludedregions:
+            ref = interval.chrom
+            if ref in benchmark_stats["numnonexcludedbases"].keys():
+                benchmark_stats["numnonexcludedbases"][ref] = benchmark_stats["numnonexcludedbases"][ref] - len(interval)
+
 # this routine assumes query start > query end for reverse strand alignments
 def assess_overall_structure(aligndata:list, refobj, queryobj, outputfiles, bedobjects, benchmark_stats, args):
 
     # create a "clustercoverage" dictionary that will contain each chromosome's number of clusters and bases covered
     benchmark_stats["clustercoverage"] = {}
     benchmark_stats["alignclusters"] = {}
-    benchmark_stats["numnonexcludedbases"] = {}
+    populate_numnonexcludedbases(refobj, bedobjects, benchmark_stats)
 
     # maximum separating distance along target to include in one cluster of alignments
     maxdistance = args.maxclusterdistance
@@ -830,16 +845,6 @@ def assess_overall_structure(aligndata:list, refobj, queryobj, outputfiles, bedo
     # create a directory for alignment line plots for each chromosome:
     output.create_output_directory(outputfiles["alignplotdir"])
     alignplotprefix = outputfiles["alignplotprefix"]
-
-    # calculate number of non-excluded bases for each ref entry:
-    # since allexcludedregions bed object is merged,can subtract out excluded bases interval by interval
-    for ref in refobj.references:
-        benchmark_stats["numnonexcludedbases"][ref] = refobj.get_reference_length(ref)
-    if bedobjects["allexcludedregions"] is not None:
-        for interval in bedobjects["allexcludedregions"]:
-            ref = interval.chrom
-            if ref in benchmark_stats["numnonexcludedbases"].keys():
-                benchmark_stats["numnonexcludedbases"][ref] = benchmark_stats["numnonexcludedbases"][ref] - len(interval)
     
     aligndict = {}
     for align in aligndata:
