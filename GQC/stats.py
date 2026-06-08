@@ -5,6 +5,18 @@ import pybedtools
 
 logger = logging.getLogger(__name__)
 
+def calculate_haplotype_bases(basecounts:dict, phap1, phap2)->tuple:
+
+    hap1totalbases = 0
+    hap2totalbases = 0
+    for chrom, chrombases in basecounts.items():
+        if phap1.match(chrom):
+            hap1totalbases = hap1totalbases + chrombases
+        if phap2.match(chrom):
+            hap2totalbases = hap2totalbases + chrombases
+
+    return hap1totalbases, hap2totalbases
+
 def write_general_assembly_stats(refobj, queryobj, contigregions, gapregions, outputfiles, benchparams, args)->dict:
 
     bmstats = {}
@@ -163,13 +175,17 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
     patpattern = benchparams['patpattern']
     phap1 = re.compile(r".*" + re.escape(matpattern) + ".*", re.IGNORECASE)
     phap2 = re.compile(r".*" + re.escape(patpattern) + ".*", re.IGNORECASE)
-    totalbenchcovered = 0
-    totalincludedbenchcovered = 0
+
+    cov_hap1totalbases = bmstats['hap1totalbases']
+    cov_hap2totalbases = bmstats['hap2totalbases']
+    if "numnonexcludedbases" in bmstats:
+        cov_hap1totalbases, cov_hap2totalbases = calculate_haplotype_bases(bmstats["numnonexcludedbases"], phap1, phap2)
+    cov_totalbenchbases = cov_hap1totalbases + cov_hap2totalbases
 
     totalrefaligned = 0
     numberrefaligns = 0
 
-    totalbases = bmstats['diploidtotalbases'] # total bases in benchmark
+    totalbases = bmstats['diploidtotalbases'] # total bases in benchmark (for LG/NG/auN only)
 
     if totalbases > 0:
         nga50 = 0
@@ -194,23 +210,17 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
 
     matbenchcovered = 0
     patbenchcovered = 0
-    for truthint in mergedtruthcoveredbed:
-        [chrom, start, end, name] = truthint
-        chrom = truthint.chrom
-        start = int(truthint.start)
-        end = int(truthint.stop)
-        totalbenchcovered = totalbenchcovered + end - start
-        if phap1.match(chrom):
-            matbenchcovered = matbenchcovered + end - start
-        if phap2.match(chrom):
-            patbenchcovered = patbenchcovered + end - start
-
+    totalincludedbenchcovered = 0
     for truthint in includedtruthcoveredbed:
-        [chrom, start, end, name] = truthint
         chrom = truthint.chrom
         start = int(truthint.start)
         end = int(truthint.stop)
-        totalincludedbenchcovered = totalincludedbenchcovered + end - start
+        intervalbases = end - start
+        totalincludedbenchcovered = totalincludedbenchcovered + intervalbases
+        if phap1.match(chrom):
+            matbenchcovered = matbenchcovered + intervalbases
+        if phap2.match(chrom):
+            patbenchcovered = patbenchcovered + intervalbases
 
     longesttestalignment = 0
     totaltestmatcovered = 0
@@ -229,7 +239,7 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
 
     bmstats["testmattotalcovered"] = totaltestmatcovered
     bmstats["testpattotalcovered"] = totaltestpatcovered
-    bmstats["benchtotalcovered"] = totalbenchcovered
+    bmstats["benchtotalcovered"] = totalincludedbenchcovered
     bmstats["includedbenchtotalcovered"] = totalincludedbenchcovered
 
     with open(generalstatsfile, "a") as gsfh:
@@ -242,24 +252,24 @@ def write_merged_aligned_stats(refobj, queryobj, mergedtruthcoveredbed, included
             gsfh.write("auNGA: " + str(round(aunga/1000000, 3)) + "Mb\n")
         perctestmatcovered = int(totaltestmatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
         perctestpatcovered = int(totaltestpatcovered * 1000 / bmstats['totallargecontigbases'] + 0.5) / 10
-        if bmstats['hap1totalbases'] > 0 or bmstats['hap2totalbases'] > 0:
-            percbenchcovered = int(1000 * totalbenchcovered / (bmstats['hap1totalbases'] + bmstats['hap2totalbases']) + 0.5) / 10
+        if cov_totalbenchbases > 0:
+            percbenchcovered = int(1000 * totalincludedbenchcovered / cov_totalbenchbases + 0.5) / 10
         else:
             percbenchcovered = 'NA'
-        if bmstats['hap1totalbases'] > 0:
-            percmatbenchcovered = int(1000 * matbenchcovered / bmstats['hap1totalbases'] + 0.5) / 10
+        if cov_hap1totalbases > 0:
+            percmatbenchcovered = int(1000 * matbenchcovered / cov_hap1totalbases + 0.5) / 10
         else:
             percmatbenchcovered = 'NA'
-        if bmstats['hap2totalbases'] > 0:
-            percpatbenchcovered = int(1000 * patbenchcovered / bmstats['hap2totalbases'] + 0.5) / 10
+        if cov_hap2totalbases > 0:
+            percpatbenchcovered = int(1000 * patbenchcovered / cov_hap2totalbases + 0.5) / 10
         else:
             percpatbenchcovered = 'NA'
         gsfh.write("Total " + args.assembly + " bases in aligns to MAT chromosomes: " + str(totaltestmatcovered) + "/" + str(bmstats['totallargecontigbases']) + " (" + str(perctestmatcovered) + "% of total bases in contigs >= " + str(args.mincontiglength) + " bases)" + "\n")
         gsfh.write("Total " + args.assembly + " bases in aligns to PAT chromosomes: " + str(totaltestpatcovered) + "/" + str(bmstats['totallargecontigbases']) + " (" + str(perctestpatcovered) + "% of total bases in contigs >= " + str(args.mincontiglength) + " bases)" + "\n")
         gsfh.write("Longest " + args.assembly + " alignment length (in test assembly bases) to the benchmark: " + str(round(longesttestalignment/1000000, 3)) + "Mb\n")
-        gsfh.write("Total " + args.benchmark + " covered: " + str(totalbenchcovered) + "/" + str(bmstats['totalbases']) + " (" + str(percbenchcovered) + "% of all MAT and PAT bases in benchmark)" + "\n" )
-        gsfh.write("MAT " + args.benchmark + " covered: " + str(matbenchcovered) + "/" + str(bmstats['hap1totalbases']) + " (" + str(percmatbenchcovered) + "% of MAT bases in benchmark)" + "\n")
-        gsfh.write("PAT " + args.benchmark + " covered: " + str(patbenchcovered) + "/" + str(bmstats['hap2totalbases']) + " (" + str(percpatbenchcovered) + "% of PAT bases in benchmark)" + "\n")
+        gsfh.write("Total " + args.benchmark + " covered: " + str(totalincludedbenchcovered) + "/" + str(cov_totalbenchbases) + " (" + str(percbenchcovered) + "% of all MAT and PAT bases in benchmark)" + "\n" )
+        gsfh.write("MAT " + args.benchmark + " covered: " + str(matbenchcovered) + "/" + str(cov_hap1totalbases) + " (" + str(percmatbenchcovered) + "% of MAT bases in benchmark)" + "\n")
+        gsfh.write("PAT " + args.benchmark + " covered: " + str(patbenchcovered) + "/" + str(cov_hap2totalbases) + " (" + str(percpatbenchcovered) + "% of PAT bases in benchmark)" + "\n")
 
         if "ngc50" in bmstats.keys():
             maxclusterdistance = args.maxclusterdistance
