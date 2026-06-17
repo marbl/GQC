@@ -240,9 +240,8 @@ def main() -> None:
         q1phaseblockmergedbed = q1phaseblockbed.replace('.bed', '.merged.bed')
         logger.info("Writing phase block bed file of haplotype kmers of " + args.rname + " present within the " + args.qname + " assembly")
         q1phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(q1hapmerbed, q1phaseblockbed, hapdata['q1']['pysamobj'], alpha, transitionprob, 0)
-        if not os.path.exists(q1phaseblockmergedbed):
-            sortedq1phaseblockints = q1phaseblockints.sort()
-            sortedq1phaseblockints.saveas(q1phaseblockmergedbed)
+        sortedq1phaseblockints = q1phaseblockints.sort()
+        sortedq1phaseblockints.saveas(q1phaseblockmergedbed)
         q1_to_r1_phaseblockints = sortedq1phaseblockints.filter(lambda x: x.name=="r1")
         q1_to_r2_phaseblockints = sortedq1phaseblockints.filter(lambda x: x.name=="r2")
 
@@ -250,9 +249,8 @@ def main() -> None:
             q2phaseblockbed = outputdir + "/" + hapdata['q2']['prefix'] + ".hmmphasedscaffolds.bed"
             q2phaseblockmergedbed = q2phaseblockbed.replace('.bed', '.merged.bed')
             q2phaseblockints = phasing.find_hapmer_phase_blocks_with_hmm(q2hapmerbed, q2phaseblockbed, hapdata['q2']['pysamobj'], alpha, transitionprob, 0)
-            if not os.path.exists(q2phaseblockmergedbed):
-                sortedq2phaseblockints = q2phaseblockints.sort()
-                sortedq2phaseblockints.saveas(q2phaseblockmergedbed)
+            sortedq2phaseblockints = q2phaseblockints.sort()
+            sortedq2phaseblockints.saveas(q2phaseblockmergedbed)
             q2_to_r1_phaseblockints = sortedq2phaseblockints.filter(lambda x: x.name=="r1")
             q2_to_r2_phaseblockints = sortedq2phaseblockints.filter(lambda x: x.name=="r2")
 
@@ -336,11 +334,12 @@ def main() -> None:
             comparisonoutputfiles[comparison] = {}
         comparisonoutputfiles[comparison]['alignplotprefix'] = outputdir + "/alignmentplots/" + comparison + ".clustered_aligns"
         comparisonoutputfiles[comparison]['structvariantbed'] = outputdir + "/" + comparison + ".svs.bed"
-        bedregiondict["allexcludedregions"] = None
+        bedregiondict["allexcludedregions"] = pybedtools.BedTool("", from_string=True)
+        bedregiondict["testnregions"] = bedregiondict[comparisondata[comparison]['queryprefix'] + "nregions"]
         benchmark_stats = {}
         if not os.path.exists(comparisonoutputfiles[comparison]['structvariantbed']):
             alignparse.assess_overall_structure(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
-            structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, benchmark_stats, args)
+            structvar.write_structural_errors(rlis_aligndata, refobj, queryobj, outputfiles, bedregiondict, benchmark_stats, args)
         else:
             logger.info("Not writing structural variant bed file " + comparisonoutputfiles[comparison]['structvariantbed'] + " because it already exists!")
 
