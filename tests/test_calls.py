@@ -1,6 +1,4 @@
 import pytest
-import subprocess
-import sys
 import os
 import pysam
 from GQC import bench
@@ -8,11 +6,18 @@ from GQC import output
 from GQC import seqparse
 from GQC import alignparse
 from GQC import mummermethods
-from GQC import bedtoolslib
 
-def test_checkforprogs():
-    bench.check_for_bedtools()
-    no_rscript = bench.check_for_R()
+def test_checkforprogs_when_tools_present(monkeypatch):
+    monkeypatch.setattr(bench.shutil, "which", lambda _: "/usr/bin/fake")
+    assert bench.check_for_bedtools() == 0
+    assert bench.check_for_R() == 0
+
+
+def test_checkforprogs_when_tools_missing(monkeypatch):
+    monkeypatch.setattr(bench.shutil, "which", lambda _: None)
+    with pytest.raises(SystemExit):
+        bench.check_for_bedtools()
+    assert bench.check_for_R() == 1
 
 #def test_createoutputdir():
     #args = bench.parse_arguments(['-c', 'GQC/benchconfig.txt', '-b', 'tests/test.sort.bam', '-r', 'tests/testbenchmark.fasta.gz', '-q', 'tests/testassembly.fasta.gz', '-p', 'tests/testrun'])
@@ -20,19 +25,53 @@ def test_checkforprogs():
     #outputdir = output.create_output_directory(args.prefix)
     #assert os.path.isdir(outputdir)
 
-def test_writebedfiles():
-    args = bench.parse_arguments(['-c', 'GQC/benchconfig.txt', '-b', 'tests/test.sort.bam', '-r', 'tests/testbenchmark.fasta.gz', '-q', 'tests/testassembly.fasta.gz', '-p', 'tests/testrun'])
-    configvals = bench.read_config_data(args)
+def test_writebedfiles(tmp_path, monkeypatch):
+    output_prefix = tmp_path / "testrun"
+    os.makedirs(output_prefix, exist_ok=True)
 
-    refobj = pysam.FastaFile(args.reffasta)
+    args = bench.parse_arguments([
+        '-c', 'tests/config.txt',
+        '-b', 'tests/test.sort.bam',
+        '-r', 'tests/testbenchmark.fasta.gz',
+        '-q', 'tests/testassembly.fasta.gz',
+        '-p', str(output_prefix)
+    ])
+
     queryobj = pysam.FastaFile(args.queryfasta)
-    outputfiles = output.name_output_files(args, args.prefix)
-    seqparse.write_genome_bedfiles(queryobj, refobj, args, configvals, outputfiles, {})
 
-    with open('tests/testrun/genome.test.bed', 'r') as gfh:
+    # Avoid requiring the bedtools binary for unit tests.
+    monkeypatch.setattr(seqparse.pybedtools.BedTool, "sort", lambda self: self)
+
+    outputfiles = {
+        "testgenomebed": str(output_prefix / "genome.test.bed"),
+        "testnbed": str(output_prefix / "nlocs.test.bed"),
+        "testnonnbed": str(output_prefix / "atgcseq.test.bed"),
+    }
+    bedobjects = {}
+    seqparse.write_whole_genome_bedfile(
+        queryobj,
+        args,
+        outputfiles,
+        bedobjects,
+        "testgenomeregions",
+        "testgenomebed",
+    )
+    seqparse.find_all_ns(
+        queryobj,
+        args,
+        None,
+        outputfiles,
+        bedobjects,
+        "testnregions",
+        "testnonnregions",
+        "testnbed",
+        "testnonnbed",
+    )
+
+    with open(output_prefix / 'genome.test.bed', 'r') as gfh:
         fields = gfh.readline().rstrip().split()
         assert(int(fields[2]) == 9721)
-    with open('tests/testrun/atgcseq.test.bed', 'r') as gfh:
+    with open(output_prefix / 'atgcseq.test.bed', 'r') as gfh:
         fields = gfh.readline().rstrip().split()
         assert(int(fields[2]) == 9721)
 
