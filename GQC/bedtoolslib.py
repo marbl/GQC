@@ -132,7 +132,7 @@ def binintervals(intervals, binsize=10000, outbedfile=None):
     if outbedfile is not None:
         sortedbinnedbed = binnedbedobj.sort()
         sortedbinnedbed.saveas(outbedfile)
-    else
+    else:
         sortedbinnedbed = None
 
     return sortedbinnedbed
