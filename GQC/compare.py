@@ -85,7 +85,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('--binsize', type=int, required=False, default=100000, help='size of bins in alignment accuracy bed files')
     parser.add_argument('--vcf', action='store_true', required=False, default=False, help='write differences between assemblies in VCF (as well as BED) format')
     parser.add_argument('--haploid', action='store_true', required=False, help='run with just haploid assemblies q1 and r1')
-    parser.add_argument('--hap2dip', action='store_true', required=False, help='compare a haploid assembly q1 to ref haplotypes r1 and r2')
+    parser.add_argument('--hap2dip', action='store_true', required=False, help='compare a haploid assembly q1 to diploid reference haplotypes r1 and r2')
     parser.add_argument('--debug', action='store_true', required=False, help='print verbose output to log file for debugging purposes')
 
     return parser
@@ -141,13 +141,15 @@ def main() -> None:
 
     # check for necessary installed programs and write an output directory:
     check_for_bedtools()
+    if not args.haploid:
+        check_for_fastk()
     check_for_aligner(args.aligner)
     no_rscript = check_for_R()
 
     # dictionary of parameters from the configuration file (not used yet):
     compareparams = read_config_data(args)
 
-    # pysam objects for the assembly haplotype fasta files:
+    # pysam objects for the assembly haplotype fasta files -- will exit with an error if any don't exist:
     q1hapfasta = Path(args.q1fasta)
     r1hapfasta = Path(args.r1fasta)
     if (not q1hapfasta.is_file() or not r1hapfasta.is_file()):
@@ -206,10 +208,12 @@ def main() -> None:
     q2_to_r2_phaseblockints = []
 
     if not args.haploid:
-        logger.info("Step 2 (of n): Finding haplotype-specific kmers for each assembly")
+        logger.info("Step 2 (of n): Finding haplotype-specific kmers for each assembly haplotype")
     
         if not os.path.exists(outputdir + "/r1_not_r2.kmers.k40.ktab") or not os.path.exists(outputdir + "/r2_not_r1.kmers.k40.ktab"):
             for haplotype in hapdata.keys():
+                if haplotype == "q1" or haplotype == "q2":
+                    continue
                 hapdict = hapdata[haplotype]
                 kmers.create_kmer_database(hapdict['fasta'], outputdir, hapdict['prefix'])
        
@@ -221,9 +225,9 @@ def main() -> None:
                 hapdict = hapdata[haplotype]
                 kmers.remove_kmer_database(outputdir, hapdict['prefix'])
       
-        # Write the locations of r1- and r2-specific kmer blocks in each haplotype of the query sequence, but with indexed entry names (0, 1, 2, etc. -- this is all FASTK outputs)
+        # Write the locations of r1- and r2-specific kmer blocks in each haplotype of the query sequence, but with indexed entry names
+        # (0, 1, 2, etc. -- this is all FASTK outputs)
         # Filenames are args.q1name.kmers.merge.bed and args.q2name.kmers.merge.bed
-        #
         logger.info("Step 3 (of n): Writing bed files of kmer locations of " + args.rname + " haplotype markers in the " + args.qname + " assembly")
         q1hapmerbed = kmers.map_kmer_markers_onto_fasta(hapdata['q1']['fasta'], [outputdir + "/" + 'r1_not_r2.kmers.k40', outputdir + "/" + 'r2_not_r1.kmers.k40'], outputdir)
         if not args.hap2dip:
