@@ -980,14 +980,14 @@ def write_combined_ref_error_files(outputdir:str, comparisondata:dict, compariso
     # write windowed bedfiles with windows having higher levels of non-long STR discrepancies between assemblies:
     # these files will be subtracted from the genome, along with N regions and regions uncovered by alignments, to obtain 
     # regions in the reference covered by high-accuracy aligned query:
-    if not os.path.exists(nostrsubq50combreferrorfile):
+    #if not os.path.exists(nostrsubq50combreferrorfile):
     
         # find regions with higher levels of non-long STR discrepancies between the assemblies:
-        logger.info("Using bin size 100000")
-        binsize = 100000
+        #logger.info("Using bin size 100000")
+        #binsize = 100000
 
         # can optionally pass a filename to binintervals as last argument to write file
-        binnedcoveredintervals = bedtoolslib.binintervals(refbedobj, binsize)
+        #binnedcoveredintervals = bedtoolslib.binintervals(refbedobj, binsize)
          
         
         #[errorbins, errorbincounts, errorbinindex] = coverage.initiate_bins(refbedobj, binsize, args, includepartial=True)
