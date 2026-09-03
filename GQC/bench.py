@@ -5,6 +5,7 @@ import shutil
 import pysam
 import argparse
 import logging
+import gc
 from pybedtools import BedTool
 import importlib.resources
 from pathlib import Path
@@ -274,6 +275,13 @@ def main() -> None:
 
         # now merge the maternal and paternal trimmed files to a single file with a diploid header, sort, and index:
         alignparse.merge_trimmed_bamfiles(mattrimmedbamfile, pattrimmedbamfile, benchdiploidheaderstring, outputfiles)
+        # These full alignment indexes are no longer needed after the trimmed
+        # BAM has been written. Releasing them prevents later subprocess calls
+        # from inheriting tens of gigabytes of obsolete process state.
+        del mataligns, pataligns
+        del matalignedintervals, patalignedintervals
+        del matblocksubaligns, patblocksubaligns
+        gc.collect()
     else: 
         logger.info("Skipping step 4 (of 12): Trimmed phased alignments already exist in " + trimmedphasedbam)
 
@@ -296,6 +304,11 @@ def main() -> None:
         alignobj = pysam.AlignmentFile(trimmedphasedbam, "rb")
         aligndata = alignparse.read_bam_aligns(alignobj, args.minalignlength)
         rlis_aligndata = mummermethods.filter_aligns(aligndata, "target")
+
+    # The RLIS list contains the alignment dictionaries needed downstream;
+    # discard the larger unfiltered list before structural assessment.
+    del aligndata
+    gc.collect()
 
     ## find clusters of consistent, covering alignments and calculate continuity statistics:
     logger.info("Step 6 (of 12): Assessing overall structural alignment of assembly")
