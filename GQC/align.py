@@ -83,8 +83,6 @@ def align_haplotype_to_haplotype(queryfasta:str, reffasta:str, outputprefix:str,
 
 def minimap2_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
 
     mm2params = args.mm2params
     if mm2params == "asm10":
@@ -111,8 +109,6 @@ def minimap2_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
 
 def wfmash_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     command = "wfmash -t" + str(args.t) + " -Y \'#\' -a " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wfmdefparams.sort.bam > " + prefix + ".wfmdefparams.out 2>&1"
     print("Running " + command)
     logger.debug("Running " + command)
@@ -125,8 +121,6 @@ def wfmash_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
 
 def winnowmap2_align(queryfasta:str, benchfasta:str, prefix:str, repk19file:str, args)->list:
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     command = "winnowmap -W " + repk19file + " -a -t" + str(args.t) + " -I12g -x asm5 " + benchfasta + " " + queryfasta + " | samtools view -O BAM | samtools sort --threads " + str(args.t) + " -O bam -o " + prefix + ".wm2defparams.sort.bam > " + prefix + ".winnowmap2.defparams.out 2>&1"
     print("Running " + command)
     logger.debug("Running " + command)
@@ -139,8 +133,6 @@ def winnowmap2_align(queryfasta:str, benchfasta:str, prefix:str, repk19file:str,
 
 def lastz_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     if queryfasta.endswith('gz'):
         unzippedqueryfasta = "newunzippedquery.fasta"
         command = "gunzip -c " + queryfasta + " > " + unzippedqueryfasta
@@ -173,8 +165,6 @@ def lastz_align(queryfasta:str, benchfasta:str, prefix:str, args)->list:
 
 def index_bam_file(bamfile:str):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
-    currentdir = os.getcwd()
     command = "samtools index " + bamfile
     print("Running " + command)
     logger.debug("Running " + command)

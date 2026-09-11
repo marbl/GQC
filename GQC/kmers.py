@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 def create_kmer_database(fastafile:str, outputdir:str, prefix:str, kmersize=40):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
     kmerdbroot = outputdir + "/" + prefix + ".kmers.k" + str(kmersize)
     if not os.path.exists(kmerdbroot + ".ktab"):
        command = "FastK -k" + str(kmersize) + " -T2 -N" + kmerdbroot + " -p -t1 -v " + fastafile
@@ -20,7 +19,6 @@ def create_kmer_database(fastafile:str, outputdir:str, prefix:str, kmersize=40):
 
 def remove_kmer_database(outputdir:str, prefix:str, kmersize=40):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
     kmerdbroot = outputdir + "/" + prefix + ".kmers.k" + str(kmersize)
     if os.path.exists(kmerdbroot + ".ktab"):
        command = "Fastrm " + kmerdbroot
@@ -31,7 +29,6 @@ def remove_kmer_database(outputdir:str, prefix:str, kmersize=40):
 
 def find_anotb_kmers(db1prefix:str, db2prefix:str, outputdir:str, prefix:str, kmersize=40):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
     kmerdbroot = outputdir + "/" + prefix + ".kmers.k" + str(kmersize)
     if not os.path.exists(kmerdbroot + ".ktab"):
        command = "Logex -T2 -h \"" + kmerdbroot + " = A-B\" " + outputdir + "/" + db1prefix + ".kmers.k" + str(kmersize) + " " + outputdir + "/" + db2prefix + ".kmers.k" + str(kmersize)
@@ -44,7 +41,6 @@ def find_anotb_kmers(db1prefix:str, db2prefix:str, outputdir:str, prefix:str, km
 
 def map_kmer_markers_onto_fasta(fastafile:str, markerfilelist:list, outputdir:str):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
 
     outputbedlist = []
     tmpdir = outputdir + "/tmp"
@@ -93,7 +89,6 @@ def map_kmer_markers_onto_fasta(fastafile:str, markerfilelist:list, outputdir:st
 def find_extreme_kmers(fastkdbroot:str):
     if os.path.exists(fastkdbroot + ".hist"):
         env = os.environ.copy()
-        env['LD_LIBRARY_PATH'] = os.getcwd()
         command = "Tabex -t2 " + fastkdbroot + " LIST"
         print("Running: " + command)
         logger.info("Running: " + command)

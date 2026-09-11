@@ -96,8 +96,6 @@ def write_hetallele_bed(hetsitealleles:dict, hetbed:str):
                 hfh.write(contig + "\t" + str(hetsite['start']) + "\t" + str(hetsite['end']) + "\t" + hetsite['name'] + "\t" + hetsite['allele'] + "\t" + hetsite['ref'] + "\t" + str(hetsite['refstart']) + "\t" + str(hetsite['refend']) + "\t" + assemblycontig + "\t" + str(assemblystart) + "\t" + str(assemblyend) + "\t" + allelehap + "\n")
 
 def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarkerfile:str, outputdir:str, outputfiles:dict):
-    #env = os.environ.copy()
-    #env['LD_LIBRARY_PATH'] = os.getcwd()
     mathapmeroutput = "KmerMap.mat"
     pathapmeroutput = "KmerMap.pat"
     matpathapmeroutput = "KmerMap.matpat"
@@ -142,7 +140,6 @@ def map_benchmark_hapmers_onto_assembly(queryfasta, matmarkerfile:str, patmarker
 
 def map_benchmark_hapmers_onto_assembly_with_phaseblocks(queryfasta, matmarkerfile:str, patmarkerfile:str, outputdir:str, outputfiles:dict):
     env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = os.getcwd()
     phaseblockoutput = "PhaseBlocks"
     assemblystub = re.sub(r'\.fa.*', "", queryfasta)
     assemblystub = re.sub(r'.*/', "", assemblystub)
