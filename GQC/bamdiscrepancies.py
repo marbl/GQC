@@ -21,7 +21,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('--bam', required=True, help='bam file of alignments of sequences mapped to the reference fasta specified with --ref')
     parser.add_argument('--ref', type=str, required=True, help='(indexed) reference fasta file for the bam file reference')

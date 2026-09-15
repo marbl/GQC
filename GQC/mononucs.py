@@ -11,7 +11,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 1.0.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('-r', '--region', required=False, help='genomic region to write bed file for (e.g., chr3:25708893-42710023)')
     parser.add_argument('-f', '--fasta', type=str, required=True, help='fasta file for assembly to proecess')

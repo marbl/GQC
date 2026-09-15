@@ -62,7 +62,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('-Q', '--qname', type=str, required=False, default="AssemblyA", help='name of the assembly in which differences are reported (query)')
     parser.add_argument('-R', '--rname', type=str, required=False, default="AssemblyB", help='name of the assembly the first should be compared to (ref)')

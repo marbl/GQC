@@ -15,7 +15,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('--fastkdb', required=True, help='FastK database root')
     parser.add_argument('-p', '--prefix', type=str, required=False, default="hetsites", help='prefix to use in output filenames')

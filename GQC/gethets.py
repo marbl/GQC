@@ -22,7 +22,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('--bam1', required=True, help='bam file of alignments in one direction from one haplotype mapped to the other')
     parser.add_argument('--bam2', required=True, help='bam file of alignments in the other direction')

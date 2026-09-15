@@ -66,7 +66,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('-b', '--bam', required=False, default=None, help='bam file of alignments of the test (haploid) assembly to the diploid benchmark')
     parser.add_argument('--paf', required=False, default=None, help='paf-formatted file of alignments of the test (haploid) assembly to the diploid benchmark')

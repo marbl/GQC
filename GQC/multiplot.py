@@ -25,7 +25,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('-i', '--inputfile', required=True, default=None, help='input file with plot specs for GQC output directories to be compared')
     parser.add_argument('-o', '--output', type=str, required=True, help='directory name for output files')

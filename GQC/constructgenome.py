@@ -25,7 +25,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version = f"{parser.prog} version 0.1.0"
+        version = f"{parser.prog} version 1.1.2"
     )
     parser.add_argument('-g', '--gvcf', required=False, default=None, help='gVCF file from which VCF variants and high confidence regions will be extracted')
     parser.add_argument('--mingq', type=int, required=False, default=10, help='if parsing a gVCF file, min GQ value to require to include variants and/or reference regions')
