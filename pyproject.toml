@@ -12,7 +12,7 @@ where = [""]
 name = "GQC"
 version = "1.1.2"
 authors = [
-  { name="Nancy F. Hansen", email="nhansen@mail.nih.gov" },
+  { name="Nancy F. Hansen", email="nancyhansen@jhu.edu" },
 ]
 description = "A package for comparing a test genome to the diploid Q100 benchmark"
 readme = "README.md"
