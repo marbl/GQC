@@ -442,8 +442,11 @@ def find_hapmer_phase_blocks_with_hmm(bedfile:str, hmmphaseblockbedfile:str, sca
                 timepoint = timepoint + 1
             markerline = bfh.readline()
 
-    scafflength = scafffastaobj.get_reference_length(scaffname)
-    write_scaffold_phase_blocks(scaffname, scafflength, timepoint, lastlogprobs, previousstate, intermarkercoords, mathap1color, pathap2color, shortmathap, shortpathap, mfh, pfh)
+    # pop the final scaffold's log probs, since the scaffold-switch branch above never fires for it
+    if len(haplogprobs) > 0:
+        lastlogprobs = haplogprobs.pop()
+        scafflength = scafffastaobj.get_reference_length(scaffname)
+        write_scaffold_phase_blocks(scaffname, scafflength, timepoint, lastlogprobs, previousstate, intermarkercoords, mathap1color, pathap2color, shortmathap, shortpathap, mfh, pfh)
 
     mfh.close()
     pfh.close()
